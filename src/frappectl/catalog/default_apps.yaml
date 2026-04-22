@@ -1,0 +1,60 @@
+foundation:
+  - name: frappe
+    repo: https://github.com/frappe/frappe.git
+    branch: version-16
+    category: foundation
+
+  - name: erpnext
+    repo: https://github.com/frappe/erpnext.git
+    branch: version-16
+    category: foundation
+
+business:
+  hr:
+    - name: triotek-hrms
+      repo: https://github.com/triotek-apps/triotek-hrms.git
+      branch: version-16
+      category: business
+
+  crm:
+    - name: triotek-crm
+      repo: https://github.com/triotek-apps/triotek-crm.git
+      branch: version-16
+      category: business
+
+  helpdesk:
+    - name: triotek-helpdesk
+      repo: https://github.com/triotek-apps/triotek-helpdesk.git
+      branch: version-16
+      category: business
+
+  payments:
+    - name: payments
+      repo: https://github.com/frappe/payments.git
+      branch: version-16
+      category: business
+
+verticals:
+  education:
+    - name: triotek-education
+      repo: https://github.com/triotek-apps/triotek-education.git
+      branch: version-16
+      category: vertical
+
+  healthcare:
+    - name: triotek-healthcare
+      repo: https://github.com/triotek-apps/triotek-healthcare.git
+      branch: version-16
+      category: vertical
+
+  retail:
+    - name: triotek-webshop
+      repo: https://github.com/triotek-apps/triotek-webshop.git
+      branch: version-16
+      category: vertical
+
+  manufacturing:
+    - name: triotek-manufacturing-base
+      repo: https://github.com/triotek-apps/triotek-manufacturing-base.git
+      branch: version-16
+      category: vertical

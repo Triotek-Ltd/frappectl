@@ -1,0 +1,13 @@
+[project]
+name = "frappectl"
+version = "0.1.0"
+description = "Frappe Bench CLI"
+authors = [{ name = "You" }]
+requires-python = ">=3.10"
+dependencies = [
+    "typer[all]",
+    "pyyaml",
+]
+
+[project.scripts]
+frappectl = "frappectl.cli:app"

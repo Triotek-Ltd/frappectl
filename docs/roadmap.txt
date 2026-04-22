@@ -1,0 +1,485 @@
+
+# Build roadmap
+
+## Phase 1 — Bootstrap the repo
+
+Goal: make the repo real and installable.
+
+Build:
+
+* create the exact folder structure
+* add `pyproject.toml`
+* add package entrypoints:
+
+  * `src/frappectl/__init__.py`
+  * `src/frappectl/__main__.py`
+  * `src/frappectl/cli.py`
+* add `README.md`, `LICENSE`, `.gitignore`
+* add empty module files from your structure
+* add `scripts/install.sh`
+* add `scripts/dev-install.sh`
+
+Done when:
+
+* `pip install -e .` works
+* `python -m frappectl` works
+* `frappectl --help` works
+
+---
+
+## Phase 2 — Wire the CLI shell
+
+Goal: make the CLI surface exist end-to-end.
+
+Build:
+
+* register all command groups in `cli.py`
+* wire:
+
+  * `setup`
+  * `bench`
+  * `site`
+  * `apps`
+  * `backup`
+  * `update`
+  * `jobs`
+  * `production`
+  * `ssl`
+  * `diagnostics`
+  * `menu`
+* each command file gets at least one live placeholder command
+* make global options work:
+
+  * `--bench`
+  * `--verbose`
+  * `--yes`
+  * `--non-interactive`
+
+Done when:
+
+* all top-level commands appear in help
+* each command module is callable without import/runtime failure
+
+---
+
+## Phase 3 — Core foundation
+
+Goal: build the shared engine everything else depends on.
+
+Build:
+
+* `core/constants.py`
+* `core/errors.py`
+* `core/paths.py`
+* `core/logging.py`
+* `core/registry.py`
+* `core/context.py`
+* `core/config.py`
+* `core/state.py`
+
+Core outcomes:
+
+* bench registry file model exists
+* active bench resolution exists
+* per-bench config/state path resolution exists
+* logging works consistently
+
+Done when:
+
+* code can register a bench
+* code can resolve current bench
+* code can load/save bench config
+* code can load/save bench state
+
+---
+
+## Phase 4 — Execution/integration layer
+
+Goal: safely run system commands and external tools.
+
+Build:
+
+* `integrations/shell.py`
+* `integrations/bench.py`
+* `integrations/systemd.py`
+* `integrations/apt.py`
+* `integrations/git.py`
+* `integrations/ssh.py`
+* `integrations/mariadb.py`
+* `integrations/redis.py`
+* `integrations/nginx.py`
+* `integrations/supervisor.py`
+
+Important:
+
+* centralize subprocess execution
+* support:
+
+  * normal execution
+  * sudo/root execution
+  * run-as-bench-user execution
+  * dry-run later if needed
+* standardize return values and errors
+
+Done when:
+
+* one shell runner is used everywhere
+* no command module directly shells out on its own
+
+---
+
+## Phase 5 — Input/output support
+
+Goal: make the CLI usable and safe.
+
+Build:
+
+* `prompts/common.py`
+* `prompts/bench.py`
+* `prompts/site.py`
+* `prompts/apps.py`
+* `prompts/confirmations.py`
+* `validators/names.py`
+* `validators/system.py`
+* `validators/network.py`
+* `validators/paths.py`
+* `validators/config.py`
+* `renderers/tables.py`
+* `renderers/summaries.py`
+* `renderers/status.py`
+* `renderers/plans.py`
+
+Done when:
+
+* prompts are reusable
+* dangerous confirmations are reusable
+* validation rules are centralized
+* CLI output is consistent
+
+---
+
+## Phase 6 — Setup engine scaffold
+
+Goal: make the 12-step setup workflow executable.
+
+Build:
+
+* `setup/models.py`
+* `setup/planner.py`
+* `setup/engine.py`
+* `setup/steps/__init__.py`
+* register all 12 steps
+* implement:
+
+  * `setup run`
+  * `setup step`
+  * `setup status`
+  * `setup resume`
+
+Behavior:
+
+* each step has a clear interface
+* step progress is saved in bench state
+* failed steps stop cleanly
+* resume continues from saved state
+
+Done when:
+
+* setup engine can enumerate and run steps
+* step status persists across runs
+
+---
+
+## Phase 7 — Implement setup steps 1–2
+
+Goal: establish bench identity and filesystem layout.
+
+Build:
+
+* `step01_system_prep.py`
+* `step02_cleanup_layout.py`
+* related helpers in `setup/step_helpers/`
+
+Includes:
+
+* collect bench values
+* save bench config
+* derive paths from actual values
+* detect path conflicts
+* create installer/config/log/state directories
+
+Done when:
+
+* a new bench profile can be created and persisted
+* layout resolves correctly for multiple benches
+
+---
+
+## Phase 8 — Implement setup steps 3–5
+
+Goal: prepare host, security, and dependencies.
+
+Build:
+
+* `step03_security.py`
+* `step04_user_dev_env.py`
+* `step05_dependencies.py`
+
+Includes:
+
+* bench user creation/hardening
+* SSH/admin preparation
+* Git environment for bench user
+* MariaDB, Redis, Node, Yarn, Nginx, Supervisor, wkhtmltopdf installation
+* service checks
+
+Done when:
+
+* host is dependency-ready for Bench
+* bench user environment is ready
+
+---
+
+## Phase 9 — Implement setup steps 6–8
+
+Goal: create the real bench and first site.
+
+Build:
+
+* `step06_bench_init.py`
+* `step07_apps_fetch.py`
+* `step08_site_setup.py`
+
+Also build:
+
+* `catalog/loader.py`
+* `catalog/models.py`
+* `catalog/resolver.py`
+* `catalog/default_apps.yaml`
+
+Includes:
+
+* Bench CLI install
+* `bench init`
+* app group loading
+* app resolution
+* app fetch
+* default site creation
+* app install on site
+* default site selection
+
+Done when:
+
+* one bench can be initialized
+* apps can be resolved and fetched
+* site can be created and configured
+
+---
+
+## Phase 10 — Implement setup steps 9–12
+
+Goal: complete production, HTTPS, operations, and finalization.
+
+Build:
+
+* `step09_production.py`
+* `step10_https.py`
+* `step11_operations.py`
+* `step12_finalize.py`
+
+Includes:
+
+* production wiring
+* nginx/supervisor generation
+* HTTPS setup
+* operations entry flow
+* health checks
+* backup automation setup
+
+Done when:
+
+* production path works
+* HTTPS path works
+* final health/backup state works
+
+---
+
+## Phase 11 — Service layer actualization
+
+Goal: move reusable logic out of setup steps and into services.
+
+Build fully:
+
+* `services/bench_service.py`
+* `services/site_service.py`
+* `services/app_service.py`
+* `services/backup_service.py`
+* `services/production_service.py`
+* `services/health_service.py`
+
+Purpose:
+
+* setup steps call services
+* direct CLI commands call the same services
+* no duplication between setup flow and ops flow
+
+Done when:
+
+* setup and commands share the same business logic
+
+---
+
+## Phase 12 — Actualize direct ops commands
+
+Goal: make the CLI useful after setup, not just during install.
+
+Build out:
+
+* `commands/bench.py`
+* `commands/site.py`
+* `commands/apps.py`
+* `commands/backup.py`
+* `commands/update.py`
+* `commands/jobs.py`
+* `commands/production.py`
+* `commands/ssl.py`
+* `commands/diagnostics.py`
+* `commands/menu.py`
+
+This phase turns the design into the real daily-use CLI.
+
+Done when:
+
+* users can manage benches/sites/apps directly from CLI
+* menu wraps the same operations cleanly
+
+---
+
+## Phase 13 — Installer actualization
+
+Goal: make the repo install the CLI from Git and make it usable immediately.
+
+Build:
+
+* finalize `scripts/install.sh`
+* finalize `scripts/dev-install.sh`
+
+Installer responsibilities:
+
+* verify OS assumptions
+* ensure Python/pip exists
+* install package from Git or local clone
+* verify `frappectl` command is available
+* print next step:
+
+  * `frappectl setup run`
+  * or `frappectl setup step 1`
+
+Done when:
+
+* the repo can be installed from Git
+* the CLI becomes available immediately after install
+
+---
+
+## Phase 14 — Tests
+
+Goal: protect the foundation before feature expansion.
+
+Build:
+
+* unit tests for:
+
+  * registry
+  * context
+  * paths
+  * validators
+  * catalog resolver
+  * setup engine
+* integration tests for:
+
+  * CLI help
+  * bench command loading
+  * setup status
+  * app resolution
+
+Done when:
+
+* base flows are test-covered
+* regressions are caught early
+
+---
+
+## Phase 15 — Docs completion
+
+Goal: make the project understandable and usable.
+
+Fill:
+
+* `docs/roadmap.md`
+* `docs/architecture.md`
+* `docs/cli-spec.md`
+* `docs/setup-flow.md`
+* `docs/multi-bench.md`
+* `docs/operations.md`
+
+Also update `README.md` with:
+
+* install
+* quick start
+* setup example
+* multi-bench example
+
+Done when:
+
+* a new user can install and use it from docs only
+
+---
+
+# Recommended build order
+
+This is the exact order I recommend coding in:
+
+1. Phase 1 — Bootstrap the repo
+2. Phase 2 — Wire the CLI shell
+3. Phase 3 — Core foundation
+4. Phase 4 — Execution/integration layer
+5. Phase 5 — Input/output support
+6. Phase 6 — Setup engine scaffold
+7. Phase 7 — Setup steps 1–2
+8. Phase 8 — Setup steps 3–5
+9. Phase 9 — Setup steps 6–8
+10. Phase 11 — Service layer actualization
+11. Phase 12 — Direct ops commands
+12. Phase 10 — Setup steps 9–12
+13. Phase 13 — Installer actualization
+14. Phase 14 — Tests
+15. Phase 15 — Docs completion
+
+---
+
+# What this roadmap fully actualizes
+
+This roadmap fully delivers the two things you said matter most:
+
+## 1. The CLI
+
+A real Python package with:
+
+* installable command
+* multi-bench support
+* setup flow
+* operations flow
+* reusable services
+* direct commands
+
+## 2. The installer
+
+A Git-delivered bootstrap script that:
+
+* installs the package
+* exposes the CLI
+* hands off into the setup flow
+
+---
+
