@@ -70,6 +70,7 @@ def source_cmd(
 
     typer.echo(f"Bench source info: {bench_name}")
     typer.echo(f"  path={bench_path}")
+    typer.echo(f"  benches_root={config.get('BENCHES_ROOT', '')}")
     typer.echo(f"  exists={'yes' if bench_path.exists() else 'no'}")
     typer.echo(f"  apps_dir_exists={'yes' if (bench_path / 'apps').exists() else 'no'}")
     typer.echo(f"  sites_dir_exists={'yes' if (bench_path / 'sites').exists() else 'no'}")
@@ -83,7 +84,9 @@ def source_cmd(
 def prepare_init_cmd(
     bench: str | None = typer.Option(None, "--bench", help="Target bench"),
 ):
-    bench_name = resolve_bench(bench)
+    bench_name = (bench or ask_bench_name()).strip()
+    if not bench_name:
+        raise ValueError("Bench name is required.")
     config = prepare_bench_init(bench_name)
 
     typer.echo(f"Bench init prepared for: {bench_name}")

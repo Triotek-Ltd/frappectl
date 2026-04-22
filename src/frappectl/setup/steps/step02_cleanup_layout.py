@@ -22,6 +22,7 @@ def run(bench_name: str) -> None:
 
     layout = derive_layout(config)
     ensure_directory(layout["BENCH_USER_HOME"])
+    ensure_directory(layout["BENCHES_ROOT"])
     merged = save_bench_identity(bench_name, layout)
     conflicts = detect_path_conflicts(layout)
 
@@ -36,6 +37,7 @@ def run(bench_name: str) -> None:
 
     print(f"[{bench_name}] step 02: cleanup & layout complete")
     print(f"  BENCH_USER_HOME={merged['BENCH_USER_HOME']}")
+    print(f"  BENCHES_ROOT={merged['BENCHES_ROOT']}")
     print(f"  BENCH_PATH={merged['BENCH_PATH']}")
     print(f"  INSTALL_ROOT={merged['INSTALL_ROOT']}")
     print(f"  INSTALL_CONFIG_DIR={merged['INSTALL_CONFIG_DIR']}")

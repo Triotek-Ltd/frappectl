@@ -108,10 +108,12 @@ def derive_layout(config: dict[str, str]) -> dict[str, str]:
     bench_user = config["BENCH_USER"]
 
     bench_user_home = str(PurePosixPath("/home") / bench_user)
-    bench_path = str(PurePosixPath(bench_user_home) / bench_name)
+    benches_root = str(PurePosixPath(bench_user_home) / "benches")
+    bench_path = str(PurePosixPath(benches_root) / bench_name)
 
     return {
         "BENCH_USER_HOME": bench_user_home,
+        "BENCHES_ROOT": benches_root,
         "BENCH_PATH": bench_path,
         "INSTALL_ROOT": str(INSTALL_ROOT),
         "INSTALL_CONFIG_DIR": str(BASE_DIR),

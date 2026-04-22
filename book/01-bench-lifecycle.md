@@ -16,6 +16,8 @@ This chapter covers section 1 from [bench.txt](C:\Users\Administrator\isaac\erp\
 - the product is multi-bench oriented
 - commands should prompt for a bench when one is not supplied
 - bench lifecycle commands should not assume a single fixed bench
+- new benches should live under one managed root per bench user:
+  - `/home/<bench-user>/benches/<bench-name>`
 
 ## Interactive Bench Selection
 
@@ -107,7 +109,8 @@ After testing on the server, confirm:
 2. `bench start` works when you explicitly want it
 3. `bench version` returns the actual bench version
 4. `bench source` shows the right path, branch, and python
-5. commands prompt for bench selection instead of failing abruptly when `--bench` is omitted
+5. the bench path is under `/home/<bench-user>/benches/`
+6. commands prompt for bench selection instead of failing abruptly when `--bench` is omitted
 
 ## Before Moving To Section 2
 

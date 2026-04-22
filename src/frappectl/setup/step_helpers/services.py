@@ -14,6 +14,7 @@ from frappectl.validators import is_windows
 def detect_path_conflicts(paths: dict[str, str]) -> dict[str, bool]:
     return {
         "bench_user_home_exists": Path(paths["BENCH_USER_HOME"]).exists(),
+        "benches_root_exists": Path(paths["BENCHES_ROOT"]).exists(),
         "bench_path_exists": Path(paths["BENCH_PATH"]).exists(),
     }
 

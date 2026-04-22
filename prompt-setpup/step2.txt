@@ -35,7 +35,8 @@ Now Step 2 derives paths from those values.
 
 ```bash
 BENCH_USER_HOME="/home/${BENCH_USER}"
-BENCH_PATH="${BENCH_USER_HOME}/${BENCH_NAME}"
+BENCHES_ROOT="${BENCH_USER_HOME}/benches"
+BENCH_PATH="${BENCHES_ROOT}/${BENCH_NAME}"
 INSTALL_ROOT="/opt/frappe-installer"
 INSTALL_LOG_DIR="/var/log/frappe-installer"
 INSTALL_CONFIG_DIR="/etc/frappe-installer"
@@ -53,7 +54,8 @@ then the script uses:
 
 ```bash
 BENCH_USER_HOME="/home/alice"
-BENCH_PATH="/home/alice/eastafrica-bench"
+BENCHES_ROOT="/home/alice/benches"
+BENCH_PATH="/home/alice/benches/eastafrica-bench"
 ```
 
 That is the correct behavior.
@@ -92,12 +94,14 @@ The script should not invent names. It should derive layout from the real inputs
 
 ```bash
 BENCH_USER_HOME="/home/${BENCH_USER}"
-BENCH_PATH="${BENCH_USER_HOME}/${BENCH_NAME}"
+BENCHES_ROOT="${BENCH_USER_HOME}/benches"
+BENCH_PATH="${BENCHES_ROOT}/${BENCH_NAME}"
 ```
 
 That means:
 
 * user folder comes from `BENCH_USER`
+* benches are grouped under a single managed `benches` folder
 * bench folder comes from `BENCH_NAME`
 
 ---
@@ -110,6 +114,7 @@ The script should create only the paths it truly needs.
 
 ```bash
 mkdir -p "${BENCH_USER_HOME}"
+mkdir -p "${BENCHES_ROOT}"
 mkdir -p "${INSTALL_ROOT}"
 mkdir -p "${INSTALL_LOG_DIR}"
 mkdir -p "${INSTALL_CONFIG_DIR}"
@@ -124,6 +129,7 @@ Important:
 So here the safer approach is:
 
 * create the **user home**
+* create the **managed benches root**
 * create installer/config/log/backup roots
 * reserve `BENCH_PATH` as the target path
 * only create it yourself if your workflow truly requires pre-creation
@@ -229,6 +235,7 @@ No need for extra naming prompts here, because those already came from Step 1.
 
 ```bash
 BENCH_USER_HOME=""
+BENCHES_ROOT=""
 BENCH_PATH=""
 INSTALL_ROOT=""
 INSTALL_LOG_DIR=""
@@ -272,8 +279,9 @@ Step 2 complete
 
 Bench user: alice
 Bench user home: /home/alice
+Benches root: /home/alice/benches
 Bench name: eastafrica-bench
-Bench target path: /home/alice/eastafrica-bench
+Bench target path: /home/alice/benches/eastafrica-bench
 Installer root: /opt/frappe-installer
 Config dir: /etc/frappe-installer
 Log dir: /var/log/frappe-installer
