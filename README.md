@@ -56,27 +56,175 @@ sudo bash scripts/install.sh
 
 ## Set Up A Bench With The CLI
 
-After installation, run setup through the CLI so progress and retries stay explicit:
+Recommended first-time setup command:
 
 ```bash
 sudo frappectl setup run --bench <bench-name>
 ```
 
-You can also drive setup step-by-step:
+Example:
+
+```bash
+sudo frappectl setup run --bench bookman
+```
+
+Recommended answers on a normal Ubuntu server with `python3`:
+
+- `Bench user`: `frappe`
+- `Deployment mode`: `production`
+- `Frappe branch`: `version-15`
+- `Python executable`: `python3`
+
+Use `version-16` only if you have a Python `3.14+` executable available and you point setup at it.
+
+## Track Progress During Setup
+
+Check overall setup state:
+
+```bash
+sudo frappectl setup status --bench <bench-name>
+```
+
+Check short progress summary:
+
+```bash
+sudo frappectl setup progress --bench <bench-name>
+```
+
+Inspect saved setup values:
+
+```bash
+sudo frappectl setup inspect --bench <bench-name>
+```
+
+Show the config/state/log file paths:
+
+```bash
+sudo frappectl setup files --bench <bench-name>
+```
+
+## Resume After A Failure
+
+Resume from the next incomplete step:
+
+```bash
+sudo frappectl setup resume --bench <bench-name>
+```
+
+Example:
+
+```bash
+sudo frappectl setup resume --bench bookman
+```
+
+## Run Setup Step-By-Step
+
+If you want to drive setup manually, run one step at a time:
 
 ```bash
 sudo frappectl setup step 1 --bench <bench-name>
 sudo frappectl setup step 2 --bench <bench-name>
 sudo frappectl setup step 3 --bench <bench-name>
+sudo frappectl setup step 4 --bench <bench-name>
+sudo frappectl setup step 5 --bench <bench-name>
+sudo frappectl setup step 6 --bench <bench-name>
+sudo frappectl setup step 7 --bench <bench-name>
+sudo frappectl setup step 8 --bench <bench-name>
+sudo frappectl setup step 9 --bench <bench-name>
+sudo frappectl setup step 10 --bench <bench-name>
+sudo frappectl setup step 11 --bench <bench-name>
+sudo frappectl setup step 12 --bench <bench-name>
 ```
 
-Progress helpers:
+Useful pattern:
 
 ```bash
-sudo frappectl setup status --bench <bench-name>
-sudo frappectl setup progress --bench <bench-name>
-sudo frappectl setup inspect --bench <bench-name>
-sudo frappectl setup files --bench <bench-name>
+sudo frappectl setup step 5 --bench bookman
+sudo frappectl setup progress --bench bookman
+```
+
+## Quick Command Sequence
+
+Install the CLI:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Triotek-Ltd/frappectl/main/scripts/install.sh | sudo bash
+```
+
+Verify install:
+
+```bash
+sudo frappectl --help
+sudo frappectl setup --help
+```
+
+Run setup:
+
+```bash
+sudo frappectl setup run --bench bookman
+```
+
+Check progress in another shell if needed:
+
+```bash
+sudo frappectl setup progress --bench bookman
+sudo frappectl setup status --bench bookman
+```
+
+## First Successful Production Run
+
+Use this as the default first run on a fresh Ubuntu server:
+
+```bash
+sudo frappectl setup run --bench bookman
+```
+
+Recommended interactive answers:
+
+- `Bench user`: `frappe`
+- `Deployment mode`: `production`
+- `Generate Git SSH key for bench user?`: `yes` if you plan to fetch private repos, otherwise `no`
+- `Preferred Git provider`: `github`
+- `Private repo access`: `public_only` unless you know you need private repos now
+- `Frappe branch`: `version-15`
+- `Python executable`: `python3`
+- `SSH admin mode`: `generate`
+- `Disable root SSH`: `yes`
+- `Disable password SSH`: `yes` only if you already have working SSH key access
+- `Enable Fail2ban?`: `yes`
+- `Default site name`: your real hostname, for example `erp.example.com`
+- `Administrator password`: choose manually when prompted
+- `MariaDB root password`: choose manually when prompted
+- `Set as default site?`: `yes`
+- `Is DNS already pointing to this server?`: `no` unless DNS is already live
+- `SSL email`: your real admin email
+- `Auto backups`: `yes`
+- `Backup frequency`: `daily`
+- `Backup retention days`: `7`
+
+Safer choices for a first run:
+
+- if you are not fully sure about SSH hardening yet, keep `Disable password SSH` as `no`
+- if the server is not publicly reachable yet, keep `DNS ready` as `no`
+- if you are using the server’s normal Python 3.12, stay on `version-15`
+
+After setup finishes, check:
+
+```bash
+sudo frappectl setup status --bench bookman
+sudo frappectl bench info --bench bookman
+sudo frappectl site info --bench bookman
+sudo frappectl production status --bench bookman
+sudo frappectl site multitenant-status --bench bookman
+sudo frappectl ssl status --bench bookman
+```
+
+If setup stops partway through:
+
+```bash
+sudo frappectl setup progress --bench bookman
+sudo frappectl setup status --bench bookman
+sudo frappectl setup resume --bench bookman
 ```
 
 ## Maintenance CLI After Setup
