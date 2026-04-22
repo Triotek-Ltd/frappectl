@@ -1,25 +1,32 @@
 ﻿# frappectl
 
-`frappectl` is a Linux-first CLI for setting up and managing Frappe benches with installer state stored under `/etc/frappe-installer`, `/opt/frappe-installer`, and `/var/log/frappe-installer`.
+`frappectl` is a Linux-first installer and maintenance CLI for Frappe benches. The intended product flow is:
+
+- `scripts/install.sh` does the first-time server setup work
+- `frappectl` is used afterward for maintenance and operations
+
+Installer state is stored under `/etc/frappe-installer`, `/opt/frappe-installer`, and `/var/log/frappe-installer`.
 
 ## What It Does
 
+- installs `frappectl` from the GitHub repo
+- launches the full setup flow during install
 - installs host dependencies for a non-Docker Bench setup
 - initializes a bench as the configured bench user
 - fetches apps from the configured app catalog
 - creates and prepares the default site
 - wires production with nginx and supervisor
 - enables HTTPS with Let's Encrypt when DNS is ready
-- provides direct CLI commands for day-2 bench operations
+- provides direct CLI commands for day-2 maintenance
 
 ## Server Requirements
 
 - Ubuntu or Debian style Linux host
-- run setup and production actions as `root`
+- run install and setup actions as `root`
 - `sudo` available
 - public DNS ready before HTTPS
 
-## Install On A Server
+## First-Time Server Setup
 
 Fastest path from the real GitHub repo:
 
@@ -31,74 +38,43 @@ That installer defaults to:
 
 - repo: `https://github.com/Triotek-Ltd/frappectl.git`
 - ref: `main`
+- setup: `RUN_SETUP=yes`
+
+It will:
+
+1. install Python packaging prerequisites
+2. install `frappectl` from GitHub
+3. verify the CLI is available
+4. ask for a bench name if `BENCH_NAME` was not provided
+5. run the full setup flow immediately
+
+If you want to provide the bench name up front:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Triotek-Ltd/frappectl/main/scripts/install.sh | sudo BENCH_NAME=mybench bash
+```
 
 If you want to pin another branch or tag:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Triotek-Ltd/frappectl/main/scripts/install.sh | sudo REF=main bash
+curl -fsSL https://raw.githubusercontent.com/Triotek-Ltd/frappectl/main/scripts/install.sh | sudo REF=main BENCH_NAME=mybench bash
 ```
 
 If you already cloned the repo on the server, run:
 
 ```bash
-sudo bash scripts/install.sh
+sudo BENCH_NAME=mybench bash scripts/install.sh
 ```
 
-For a local checkout on the server:
+If you need install-only behavior for debugging, without running the setup flow:
 
 ```bash
-sudo INSTALL_MODE=local bash scripts/install.sh
+sudo RUN_SETUP=no bash scripts/install.sh
 ```
 
-The installer upgrades `pip`, `setuptools`, and `wheel`, installs the package, and verifies `frappectl --help`.
+## What The Installer Setup Covers
 
-## Use It To Set Up A Bench
-
-If your goal is to start using the script right away to create a bench, the normal path is:
-
-```bash
-sudo frappectl setup run --bench mybench
-```
-
-If you prefer to walk it step by step:
-
-```bash
-sudo frappectl setup step 1 --bench mybench
-sudo frappectl setup step 2 --bench mybench
-sudo frappectl setup step 5 --bench mybench
-sudo frappectl setup step 6 --bench mybench
-sudo frappectl setup step 7 --bench mybench
-sudo frappectl setup step 8 --bench mybench
-sudo frappectl setup step 9 --bench mybench
-sudo frappectl setup step 10 --bench mybench
-```
-
-The important bench-creation path is:
-
-- Step 5 installs host dependencies
-- Step 6 installs Bench CLI and runs `bench init`
-- Step 7 fetches apps
-- Step 8 creates the site
-- Step 9 wires production
-- Step 10 enables HTTPS when DNS is ready
-
-## Setup Flow
-
-The setup flow follows the staged design in `rnd/prompt-setpup`.
-
-### 1. Start the setup
-
-```bash
-sudo frappectl setup step 1 --bench mybench
-```
-
-Or run the full flow:
-
-```bash
-sudo frappectl setup run --bench mybench
-```
-
-### 2. What each important stage does
+The installer-driven setup flow follows the staged design in `rnd/prompt-setpup`.
 
 - Step 1: collects bench identity such as `BENCH_NAME`, `BENCH_USER`, and `DEPLOY_MODE`
 - Step 2: derives paths like `/home/<bench-user>/<bench-name>` and prepares installer-owned directories
@@ -109,26 +85,11 @@ sudo frappectl setup run --bench mybench
 - Step 9: runs production setup and reloads nginx and supervisor safely
 - Step 10: runs `bench setup lets-encrypt` when DNS is ready
 
-### 3. Resume and inspect setup
+So the installer is now the thing that should create the bench and default site on first run.
 
-```bash
-sudo frappectl setup status --bench mybench
-sudo frappectl setup resume --bench mybench
-```
+## Maintenance CLI After Setup
 
-## Create The Bench And Site Explicitly
-
-If you want to run the key actions one by one:
-
-```bash
-sudo frappectl bench prepare-init --bench mybench
-sudo frappectl apps prepare-fetch --bench mybench
-sudo frappectl site prepare --bench mybench
-sudo frappectl production prepare --bench mybench
-sudo frappectl ssl prepare --bench mybench
-```
-
-## Day-2 CLI Usage
+After the server is set up, use `frappectl` for maintenance.
 
 ### Bench
 
@@ -183,7 +144,7 @@ This prints the mapped operations surface and the direct commands behind each se
 
 ## Notes
 
-- setup, production, and HTTPS commands are intentionally Linux-only and root-gated
+- install, setup, production, and HTTPS commands are intentionally Linux-only and root-gated
 - `.local` domains and benches with `DNS_READY=no` will skip HTTPS automatically
 - installer state is stored outside the bench so multi-bench usage stays consistent
 

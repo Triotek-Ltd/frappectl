@@ -5,6 +5,8 @@ REPO_URL="${REPO_URL:-https://github.com/Triotek-Ltd/frappectl.git}"
 REF="${REF:-main}"
 PYTHON_BIN="${PYTHON_BIN:-python3}"
 INSTALL_MODE="${INSTALL_MODE:-git}"   # git | local
+BENCH_NAME="${BENCH_NAME:-}"
+RUN_SETUP="${RUN_SETUP:-yes}"
 
 log() {
   printf '[frappectl] %s\n' "$1"
@@ -78,15 +80,34 @@ verify_command() {
   fi
 }
 
+prompt_bench_name() {
+  if [[ -n "${BENCH_NAME}" ]]; then
+    return
+  fi
+
+  read -r -p "Bench name to set up: " BENCH_NAME
+  [[ -n "${BENCH_NAME}" ]] || fail "Bench name is required when RUN_SETUP=yes."
+}
+
+run_full_setup() {
+  if [[ "${RUN_SETUP}" != "yes" ]]; then
+    return
+  fi
+
+  prompt_bench_name
+  log "Starting full setup for bench '${BENCH_NAME}'..."
+  frappectl setup run --bench "${BENCH_NAME}"
+}
+
 print_next_steps() {
   cat <<'EOF'
 
-frappectl installed successfully.
+frappectl install and setup completed.
 
-Next steps:
-  frappectl setup run
-or:
-  frappectl setup step 1 --bench <bench-name>
+For maintenance later, use commands like:
+  frappectl bench info --bench <bench-name>
+  frappectl site list --bench <bench-name>
+  frappectl jobs health --bench <bench-name>
 
 EOF
 }
@@ -110,6 +131,7 @@ main() {
   esac
 
   verify_command
+  run_full_setup
   print_next_steps
 }
 
