@@ -28,7 +28,7 @@ ensure_python_and_pip() {
 
 install_editable() {
   log "Installing frappectl in editable mode..."
-  "$PYTHON_BIN" -m pip install --upgrade pip
+  "$PYTHON_BIN" -m pip install --upgrade pip setuptools wheel
   "$PYTHON_BIN" -m pip install -e .
 }
 

@@ -4,6 +4,7 @@ from ..step_helpers import (
     derive_layout,
     save_bench_identity,
     detect_path_conflicts,
+    ensure_directory,
 )
 
 
@@ -19,6 +20,7 @@ def run(bench_name: str) -> None:
         )
 
     layout = derive_layout(config)
+    ensure_directory(layout["BENCH_USER_HOME"])
     merged = save_bench_identity(bench_name, layout)
     conflicts = detect_path_conflicts(layout)
 
@@ -34,4 +36,8 @@ def run(bench_name: str) -> None:
     print(f"[{bench_name}] step 02: cleanup & layout complete")
     print(f"  BENCH_USER_HOME={merged['BENCH_USER_HOME']}")
     print(f"  BENCH_PATH={merged['BENCH_PATH']}")
+    print(f"  INSTALL_ROOT={merged['INSTALL_ROOT']}")
+    print(f"  INSTALL_CONFIG_DIR={merged['INSTALL_CONFIG_DIR']}")
+    print(f"  INSTALL_LOG_DIR={merged['INSTALL_LOG_DIR']}")
+    print(f"  BACKUP_ROOT={merged['BACKUP_ROOT']}")
     print(f"  conflicts={conflicts}")

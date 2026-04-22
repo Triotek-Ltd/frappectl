@@ -34,3 +34,4 @@ def status_cmd(
     typer.echo(f"  SSL_CERT_INSTALLED={config.get('SSL_CERT_INSTALLED', 'unknown')}")
     typer.echo(f"  HTTPS_REDIRECT_ENABLED={config.get('HTTPS_REDIRECT_ENABLED', 'unknown')}")
     typer.echo(f"  SSL_RENEWAL_ENABLED={config.get('SSL_RENEWAL_ENABLED', 'unknown')}")
+    typer.echo(f"  SSL_STATUS={config.get('SSL_STATUS', 'unknown')}")

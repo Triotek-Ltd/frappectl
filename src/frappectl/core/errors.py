@@ -12,3 +12,11 @@ class NoActiveBenchError(FrappeCtlError):
 
 class ConfigError(FrappeCtlError):
     pass
+
+
+class PrivilegeError(FrappeCtlError):
+    pass
+
+
+class UnsupportedPlatformError(FrappeCtlError):
+    pass

@@ -7,11 +7,12 @@ def load_state(bench_name: str) -> dict:
     if not path.exists():
         return {}
 
-    with open(path, "r") as f:
+    with open(path, "r", encoding="utf-8") as f:
         return json.load(f)
 
 
 def save_state(bench_name: str, state: dict):
     path = bench_state_path(bench_name)
-    with open(path, "w") as f:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with open(path, "w", encoding="utf-8") as f:
         json.dump(state, f, indent=2)

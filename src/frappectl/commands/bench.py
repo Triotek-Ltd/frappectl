@@ -7,7 +7,9 @@ from frappectl.core import (
     resolve_bench,
     load_config,
 )
+from frappectl.integrations import bench as bench_ops
 from frappectl.services import prepare_bench_init
+from frappectl.setup.step_helpers import require_root_privileges
 
 app = typer.Typer()
 
@@ -61,3 +63,34 @@ def prepare_init_cmd(
     typer.echo(f"Bench init prepared for: {bench_name}")
     typer.echo(f"  BENCH_CLI_INSTALLED={config.get('BENCH_CLI_INSTALLED', '')}")
     typer.echo(f"  BENCH_INIT_STATUS={config.get('BENCH_INIT_STATUS', '')}")
+
+
+@app.command("version")
+def version_cmd(
+    bench: str | None = typer.Option(None, "--bench", help="Target bench"),
+):
+    bench_name = resolve_bench(bench)
+    config = load_config(bench_name)
+    result = bench_ops.version(user=config.get("BENCH_USER"))
+    typer.echo(result.stdout or result.stderr)
+
+
+@app.command("doctor")
+def doctor_cmd(
+    bench: str | None = typer.Option(None, "--bench", help="Target bench"),
+):
+    bench_name = resolve_bench(bench)
+    config = load_config(bench_name)
+    result = bench_ops.doctor(cwd=config.get("BENCH_PATH", ""), user=config.get("BENCH_USER"))
+    typer.echo(result.stdout or result.stderr)
+
+
+@app.command("restart")
+def restart_cmd(
+    bench: str | None = typer.Option(None, "--bench", help="Target bench"),
+):
+    require_root_privileges("Bench restart")
+    bench_name = resolve_bench(bench)
+    config = load_config(bench_name)
+    result = bench_ops.restart(cwd=config.get("BENCH_PATH", ""), user=config.get("BENCH_USER"))
+    typer.echo(result.stdout or "Bench restart requested.")

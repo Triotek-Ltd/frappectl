@@ -2,9 +2,9 @@ from frappectl.integrations.shell import run
 
 
 def is_running():
-    result = run(["systemctl", "is-active", "redis"], check=False)
+    result = run(["systemctl", "is-active", "redis-server"], check=False)
     return result.stdout == "active"
 
 
 def start():
-    return run(["systemctl", "start", "redis"], sudo=True)
+    return run(["systemctl", "start", "redis-server"], sudo=True)

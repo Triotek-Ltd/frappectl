@@ -1,6 +1,7 @@
 from datetime import datetime, UTC
 
 from frappectl.core import load_state, save_state
+from frappectl.setup.step_helpers import require_root_privileges
 from frappectl.setup.planner import get_all_steps, get_step_by_number, get_next_incomplete_step_number
 
 
@@ -58,6 +59,7 @@ def _mark_step_failed(bench_name: str, step_number: int, step_key: str, title: s
 
 
 def run_step(bench_name: str, step_number: int) -> None:
+    require_root_privileges(f"Setup step {step_number}")
     step = get_step_by_number(step_number)
 
     _mark_step_running(bench_name, step.number, step.key, step.title)

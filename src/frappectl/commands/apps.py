@@ -1,6 +1,7 @@
 import typer
 
 from frappectl.core import resolve_bench, load_config
+from frappectl.integrations import bench as bench_ops
 from frappectl.services import resolve_app_plan_for_bench, prepare_app_fetch
 
 app = typer.Typer()
@@ -53,3 +54,15 @@ def status_cmd(
     typer.echo(f"  SELECTED_BUSINESS_MODULES={config.get('SELECTED_BUSINESS_MODULES', '')}")
     typer.echo(f"  FINAL_APPS_LIST={config.get('FINAL_APPS_LIST', '')}")
     typer.echo(f"  APPS_FETCH_STATUS={config.get('APPS_FETCH_STATUS', 'unknown')}")
+
+
+@app.command("list-site")
+def list_site_cmd(
+    bench: str | None = typer.Option(None, "--bench", help="Target bench"),
+    site_name: str | None = typer.Option(None, "--site", help="Site name"),
+):
+    bench_name = resolve_bench(bench)
+    config = load_config(bench_name)
+    target_site = site_name or config.get("DEFAULT_SITE_NAME", "")
+    result = bench_ops.list_apps(target_site, cwd=config.get("BENCH_PATH", ""), user=config.get("BENCH_USER"))
+    typer.echo(result.stdout or result.stderr)

@@ -11,3 +11,7 @@ def update():
 
 def restart_all():
     return run(["supervisorctl", "restart", "all"], sudo=True)
+
+
+def status():
+    return run(["supervisorctl", "status"], sudo=True)

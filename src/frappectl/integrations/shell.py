@@ -1,5 +1,6 @@
 import subprocess
 from dataclasses import dataclass
+from typing import Dict
 from typing import List, Optional
 
 
@@ -20,6 +21,8 @@ def run(
     sudo: bool = False,
     user: Optional[str] = None,
     cwd: Optional[str] = None,
+    env: Optional[Dict[str, str]] = None,
+    input_text: Optional[str] = None,
     check: bool = True,
 ) -> CommandResult:
     """
@@ -33,15 +36,17 @@ def run(
     final_cmd = cmd.copy()
 
     if user:
-        final_cmd = ["sudo", "-u", user] + final_cmd
+        final_cmd = ["sudo", "-H", "-u", user] + final_cmd
     elif sudo:
         final_cmd = ["sudo"] + final_cmd
 
     process = subprocess.run(
         final_cmd,
         cwd=cwd,
+        env=env,
         capture_output=True,
         text=True,
+        input=input_text,
     )
 
     result = CommandResult(

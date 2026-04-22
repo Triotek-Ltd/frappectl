@@ -1,6 +1,7 @@
 import typer
 
 from frappectl.core import resolve_bench, load_config
+from frappectl.integrations import bench as bench_ops
 from frappectl.services import prepare_site_setup
 
 app = typer.Typer()
@@ -33,3 +34,36 @@ def prepare_cmd(
     typer.echo(f"  SITE_CREATE_STATUS={config.get('SITE_CREATE_STATUS', '')}")
     typer.echo(f"  SITE_INSTALL_STATUS={config.get('SITE_INSTALL_STATUS', '')}")
     typer.echo(f"  SITE_INSTALL_APPS={config.get('SITE_INSTALL_APPS', '')}")
+
+
+@app.command("list")
+def list_cmd(
+    bench: str | None = typer.Option(None, "--bench", help="Target bench"),
+):
+    bench_name = resolve_bench(bench)
+    config = load_config(bench_name)
+    result = bench_ops.list_sites(cwd=config.get("BENCH_PATH", ""), user=config.get("BENCH_USER"))
+    typer.echo(result.stdout or result.stderr)
+
+
+@app.command("migrate")
+def migrate_cmd(
+    bench: str | None = typer.Option(None, "--bench", help="Target bench"),
+    site_name: str | None = typer.Option(None, "--site", help="Site name"),
+):
+    bench_name = resolve_bench(bench)
+    config = load_config(bench_name)
+    target_site = site_name or config.get("DEFAULT_SITE_NAME", "")
+    result = bench_ops.migrate(target_site, cwd=config.get("BENCH_PATH", ""), user=config.get("BENCH_USER"))
+    typer.echo(result.stdout or f"Migrated site: {target_site}")
+
+
+@app.command("use")
+def use_site_cmd(
+    site_name: str = typer.Argument(..., help="Site name"),
+    bench: str | None = typer.Option(None, "--bench", help="Target bench"),
+):
+    bench_name = resolve_bench(bench)
+    config = load_config(bench_name)
+    bench_ops.use_site(site_name, cwd=config.get("BENCH_PATH", ""), user=config.get("BENCH_USER"))
+    typer.echo(f"Default site context switched to: {site_name}")

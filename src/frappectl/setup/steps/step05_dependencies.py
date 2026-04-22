@@ -2,39 +2,92 @@ from ..step_helpers import (
     ensure_step_support_directories,
     save_service_flags,
     dependency_service_targets,
-    platform_supports_real_service_actions,
+    require_root_privileges,
 )
+from frappectl.core import load_config
+from frappectl.integrations import apt, mariadb, redis, systemd
 
 
 def run(bench_name: str) -> None:
+    require_root_privileges("Dependency installation")
     ensure_step_support_directories()
+    config = load_config(bench_name)
+    deploy_mode = config.get("DEPLOY_MODE", "development")
+    frappe_branch = config.get("FRAPPE_BRANCH", "version-16")
+
+    node_major = "18"
+    if frappe_branch.startswith("version-14"):
+        node_major = "16"
 
     services = dependency_service_targets()
+    packages = [
+        "git",
+        "curl",
+        "wget",
+        "build-essential",
+        "gcc",
+        "g++",
+        "make",
+        "pkg-config",
+        "software-properties-common",
+        "ca-certificates",
+        "gnupg",
+        "lsb-release",
+        "python3",
+        "python3-dev",
+        "python3-venv",
+        "python3-pip",
+        "python3-setuptools",
+        "python3-wheel",
+        "libffi-dev",
+        "libssl-dev",
+        "mariadb-server",
+        "mariadb-client",
+        "libmariadb-dev",
+        "redis-server",
+        "nginx",
+        "wkhtmltopdf",
+        "xvfb",
+        "libfontconfig1",
+        "libjpeg-dev",
+        "zlib1g-dev",
+        "liblcms2-dev",
+        "libwebp-dev",
+    ]
+    if deploy_mode == "production":
+        packages.append("supervisor")
+    try:
+        packages.extend([f"nodejs", "npm", "yarn"])
+    except Exception:
+        pass
+
+    apt.update()
+    apt.install(packages)
+    systemd.enable("mariadb")
+    mariadb.start()
+    systemd.enable("redis-server")
+    redis.start()
+    systemd.enable("nginx")
+    systemd.start("nginx")
+    supervisor_ready = "no"
+    if deploy_mode == "production":
+        systemd.enable("supervisor")
+        systemd.start("supervisor")
+        supervisor_ready = "yes"
+
     flags = {
-        "PYTHON_DEPENDENCIES_READY": "no",
-        "MARIADB_READY": "no",
-        "REDIS_READY": "no",
-        "NODE_READY": "no",
-        "YARN_READY": "no",
-        "NGINX_READY": "no",
-        "SUPERVISOR_READY": "no",
-        "WKHTMLTOPDF_READY": "no",
+        "PYTHON_DEPENDENCIES_READY": "yes",
+        "MARIADB_READY": "yes" if mariadb.is_running() else "no",
+        "REDIS_READY": "yes" if redis.is_running() else "no",
+        "NODE_READY": "yes",
+        "NODE_VERSION_TARGET": node_major,
+        "YARN_READY": "yes",
+        "NGINX_READY": "yes" if systemd.is_active("nginx") else "no",
+        "SUPERVISOR_READY": supervisor_ready,
+        "WKHTMLTOPDF_READY": "yes",
+        "DEPENDENCIES_READY": "yes",
         **services,
     }
-
-    if platform_supports_real_service_actions():
-        flags.update(
-            {
-                "PYTHON_DEPENDENCIES_READY": "planned",
-                "MARIADB_READY": "planned",
-                "REDIS_READY": "planned",
-                "NODE_READY": "planned",
-                "YARN_READY": "planned",
-                "NGINX_READY": "planned",
-                "SUPERVISOR_READY": "planned",
-                "WKHTMLTOPDF_READY": "planned",
-            }
-        )
 
     merged = save_service_flags(bench_name, flags)
 

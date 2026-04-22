@@ -1,6 +1,7 @@
 from pathlib import PurePosixPath
 
 from frappectl.core import load_config, save_config
+from frappectl.core.constants import INSTALL_ROOT, BACKUP_ROOT, BASE_DIR, LOG_DIR
 from frappectl.prompts import (
     ask_bench_name,
     ask_bench_user,
@@ -59,6 +60,10 @@ def derive_layout(config: dict[str, str]) -> dict[str, str]:
     return {
         "BENCH_USER_HOME": bench_user_home,
         "BENCH_PATH": bench_path,
+        "INSTALL_ROOT": str(INSTALL_ROOT),
+        "INSTALL_CONFIG_DIR": str(BASE_DIR),
+        "INSTALL_LOG_DIR": str(LOG_DIR),
+        "BACKUP_ROOT": str(BACKUP_ROOT),
     }
 
 
@@ -122,6 +127,8 @@ def collect_bench_init_settings(bench_name: str) -> dict[str, str]:
         "FRAPPE_BRANCH": _require_non_empty(frappe_branch, "Frappe branch"),
         "PYTHON_BIN": _require_non_empty(python_bin, "Python executable"),
     }
+
+
 def save_bench_identity(bench_name: str, data: dict[str, str]) -> dict[str, str]:
     existing = load_config(bench_name)
     merged = {**existing, **data}

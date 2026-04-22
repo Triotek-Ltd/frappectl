@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-REPO_URL="${REPO_URL:-}"
+REPO_URL="${REPO_URL:-https://github.com/Triotek-Ltd/frappectl.git}"
 REF="${REF:-main}"
 PYTHON_BIN="${PYTHON_BIN:-python3}"
 INSTALL_MODE="${INSTALL_MODE:-git}"   # git | local
@@ -18,6 +18,12 @@ fail() {
 require_linux() {
   if [[ "${OSTYPE:-}" != linux* ]]; then
     fail "This installer targets Linux servers. Current OS is not Linux."
+  fi
+}
+
+require_root() {
+  if [[ "$(id -u)" -ne 0 ]]; then
+    fail "Run this installer as root so frappectl is installed system-wide and can manage /etc, /opt, and /var/log paths."
   fi
 }
 
@@ -47,13 +53,12 @@ ensure_python_and_pip() {
 }
 
 upgrade_pip() {
-  log "Upgrading pip..."
-  "$PYTHON_BIN" -m pip install --upgrade pip
+  log "Upgrading pip, setuptools, and wheel..."
+  "$PYTHON_BIN" -m pip install --upgrade pip setuptools wheel
 }
 
 install_from_git() {
-  [[ -n "$REPO_URL" ]] || fail "REPO_URL is required when INSTALL_MODE=git"
-  log "Installing frappectl from Git..."
+  log "Installing frappectl from Git (${REPO_URL}@${REF})..."
   "$PYTHON_BIN" -m pip install "git+${REPO_URL}@${REF}"
 }
 
@@ -88,6 +93,7 @@ EOF
 
 main() {
   require_linux
+  require_root
   ensure_python_and_pip
   upgrade_pip
 

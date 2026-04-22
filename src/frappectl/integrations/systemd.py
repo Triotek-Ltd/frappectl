@@ -16,3 +16,7 @@ def restart(service: str):
 
 def enable(service: str):
     return run(["systemctl", "enable", service], sudo=True)
+
+
+def reload(service: str):
+    return run(["systemctl", "reload", service], sudo=True)

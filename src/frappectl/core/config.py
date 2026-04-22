@@ -8,7 +8,7 @@ def load_config(bench_name: str) -> dict:
         return {}
 
     data = {}
-    with open(path, "r") as f:
+    with open(path, "r", encoding="utf-8") as f:
         for line in f:
             if "=" in line:
                 k, v = line.strip().split("=", 1)
@@ -18,6 +18,7 @@ def load_config(bench_name: str) -> dict:
 
 def save_config(bench_name: str, config: dict):
     path = bench_config_path(bench_name)
-    with open(path, "w") as f:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with open(path, "w", encoding="utf-8") as f:
         for k, v in config.items():
             f.write(f"{k}={v}\n")
