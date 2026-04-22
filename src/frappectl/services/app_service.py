@@ -1,4 +1,5 @@
 from pathlib import Path
+import typer
 
 from frappectl.catalog import AppSelection, resolve_apps, installable_site_apps
 from frappectl.core import load_config, save_config
@@ -43,9 +44,11 @@ def prepare_app_fetch(bench_name: str) -> dict[str, str]:
         if app.name == "frappe":
             continue
         if (Path(bench_path) / "apps" / app.name).exists():
+            typer.echo(f"[{bench_name}] app already present: {app.name}")
             fetched_apps.append(app.name)
             continue
         repo = app.repo or app.name
+        typer.echo(f"[{bench_name}] fetching app: {app.name} from {repo}")
         bench.get_app(repo=repo, branch=app.branch, cwd=bench_path, user=bench_user)
         fetched_apps.append(app.name)
 

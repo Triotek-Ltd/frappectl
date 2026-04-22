@@ -1,4 +1,5 @@
 from datetime import datetime, UTC
+import typer
 
 from frappectl.core import load_state, save_state
 from frappectl.setup.step_helpers import require_root_privileges
@@ -62,15 +63,18 @@ def run_step(bench_name: str, step_number: int) -> None:
     require_root_privileges(f"Setup step {step_number}")
     step = get_step_by_number(step_number)
 
+    typer.echo(f"[{bench_name}] starting step {step.number:02d}: {step.title}")
     _mark_step_running(bench_name, step.number, step.key, step.title)
 
     try:
         step.handler(bench_name)
     except Exception as exc:
         _mark_step_failed(bench_name, step.number, step.key, step.title, str(exc))
+        typer.echo(f"[{bench_name}] step {step.number:02d} failed: {exc}")
         raise
 
     _mark_step_done(bench_name, step.number, step.key, step.title)
+    typer.echo(f"[{bench_name}] finished step {step.number:02d}: {step.title}")
 
 
 def run_all(bench_name: str) -> None:

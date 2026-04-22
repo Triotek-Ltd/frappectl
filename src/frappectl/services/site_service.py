@@ -1,4 +1,5 @@
 from pathlib import Path
+import typer
 
 from frappectl.core import load_config, save_config
 from frappectl.core.errors import ConflictError
@@ -51,6 +52,7 @@ def prepare_site_setup(bench_name: str) -> dict[str, str]:
                 "Use a different site name or remove/archive the existing database first."
             )
 
+    typer.echo(f"[{bench_name}] creating site: {site_name}")
     bench.new_site(
         name=site_name,
         admin_password=admin_password,
@@ -59,8 +61,10 @@ def prepare_site_setup(bench_name: str) -> dict[str, str]:
         user=bench_user,
     )
 
+    typer.echo(f"[{bench_name}] switching bench context to site: {site_name}")
     bench.use_site(site_name, cwd=bench_path, user=bench_user)
     if config.get("SET_AS_DEFAULT_SITE", "yes") == "yes":
+        typer.echo(f"[{bench_name}] setting default site: {site_name}")
         bench.set_default_site(site_name, cwd=bench_path, user=bench_user)
 
     existing_apps_output = bench.list_apps(site_name, cwd=bench_path, user=bench_user).stdout
@@ -73,10 +77,13 @@ def prepare_site_setup(bench_name: str) -> dict[str, str]:
     installed_apps: list[str] = []
     for app_name in [item.strip() for item in config.get("SITE_INSTALL_APPS", "").split(",") if item.strip()]:
         if app_name not in existing_apps:
+            typer.echo(f"[{bench_name}] installing site app: {app_name}")
             bench.install_app(site=site_name, app_name=app_name, cwd=bench_path, user=bench_user)
         installed_apps.append(app_name)
 
+    typer.echo(f"[{bench_name}] migrating site: {site_name}")
     bench.migrate(site_name, cwd=bench_path, user=bench_user)
+    typer.echo(f"[{bench_name}] clearing caches for site: {site_name}")
     bench.clear_cache(site_name, cwd=bench_path, user=bench_user)
     bench.clear_website_cache(site_name, cwd=bench_path, user=bench_user)
     sites_result = bench.list_sites(cwd=bench_path, user=bench_user)
