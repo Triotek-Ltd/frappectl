@@ -21,7 +21,6 @@ def run(bench_name: str) -> None:
         )
 
     layout = derive_layout(config)
-    assert_no_bench_conflicts(bench_name, config, layout, include_installer_state=False)
     ensure_directory(layout["BENCH_USER_HOME"])
     merged = save_bench_identity(bench_name, layout)
     conflicts = detect_path_conflicts(layout)

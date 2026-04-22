@@ -1,6 +1,12 @@
 from pathlib import Path
 
-from frappectl.core import load_config, save_config, load_registry
+from frappectl.core import (
+    load_config,
+    save_config,
+    load_registry,
+    save_registry,
+    bench_path_exists,
+)
 from frappectl.core.errors import ConflictError
 from frappectl.validators import is_windows
 
@@ -12,6 +18,39 @@ def detect_path_conflicts(paths: dict[str, str]) -> dict[str, bool]:
     }
 
 
+def _remove_stale_installer_files(bench_name: str, paths: dict[str, str]) -> None:
+    config_path = Path(paths["INSTALL_CONFIG_DIR"]) / "benches" / f"{bench_name}.env"
+    state_path = Path(paths["INSTALL_CONFIG_DIR"]) / "state" / f"{bench_name}.json"
+    log_path = Path(paths["INSTALL_LOG_DIR"]) / f"{bench_name}.log"
+
+    for path in (config_path, state_path, log_path):
+        if path.exists():
+            path.unlink()
+
+
+def _cleanup_stale_registry_entries(bench_name: str, target_path: str, paths: dict[str, str]) -> None:
+    registry = load_registry()
+    benches = registry.get("benches", {})
+    updated = False
+
+    stale_names = [
+        name
+        for name, data in benches.items()
+        if (name == bench_name or data.get("path") == target_path) and not bench_path_exists(data)
+    ]
+
+    for name in stale_names:
+        benches.pop(name, None)
+        updated = True
+        if name == bench_name:
+            _remove_stale_installer_files(bench_name, paths)
+
+    if updated:
+        if registry.get("default") not in benches:
+            registry["default"] = next(iter(benches), None)
+        save_registry(registry)
+
+
 def assert_no_bench_conflicts(
     bench_name: str,
     config: dict[str, str],
@@ -19,6 +58,8 @@ def assert_no_bench_conflicts(
     *,
     include_installer_state: bool = True,
 ) -> None:
+    _cleanup_stale_registry_entries(bench_name, paths["BENCH_PATH"], paths)
+
     registry = load_registry()
     registered_benches = registry.get("benches", {})
 

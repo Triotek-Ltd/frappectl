@@ -1,4 +1,5 @@
 import json
+from pathlib import Path
 from frappectl.core.constants import BENCHES_FILE
 from frappectl.core.paths import ensure_base_dirs
 from frappectl.core.errors import BenchNotFoundError
@@ -28,6 +29,25 @@ def register_bench(name: str, data: dict):
         registry["default"] = name
 
     save_registry(registry)
+
+
+def unregister_bench(name: str):
+    registry = load_registry()
+    benches = registry.get("benches", {})
+    benches.pop(name, None)
+
+    if registry.get("default") == name:
+        registry["default"] = next(iter(benches), None)
+
+    save_registry(registry)
+
+
+def bench_path_exists(entry: dict) -> bool:
+    path = (entry or {}).get("path", "")
+    if not path:
+        return False
+    bench_path = Path(path)
+    return bench_path.exists() and any(bench_path.iterdir())
 
 
 def get_bench(name: str) -> dict:

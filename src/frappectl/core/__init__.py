@@ -3,6 +3,8 @@ from .registry import (
     load_registry,
     save_registry,
     register_bench,
+    unregister_bench,
+    bench_path_exists,
     get_bench,
     list_benches,
 )
@@ -22,6 +24,8 @@ __all__ = [
     "load_registry",
     "save_registry",
     "register_bench",
+    "unregister_bench",
+    "bench_path_exists",
     "get_bench",
     "list_benches",
     "load_config",

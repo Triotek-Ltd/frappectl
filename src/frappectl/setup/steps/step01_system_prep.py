@@ -1,4 +1,3 @@
-from frappectl.core import register_bench, load_config
 from ..step_helpers import (
     prepare_installer_directories,
     collect_bench_identity,
@@ -17,15 +16,6 @@ def run(bench_name: str) -> None:
     # setup engine has started tracking step state, so those files are not collisions.
     assert_no_bench_conflicts(bench_name, identity, layout, include_installer_state=False)
     merged = save_bench_identity(bench_name, identity)
-
-    register_bench(
-        merged["BENCH_NAME"],
-        {
-            "path": load_config(bench_name).get("BENCH_PATH", ""),
-            "user": merged["BENCH_USER"],
-            "mode": merged["DEPLOY_MODE"],
-        },
-    )
 
     print(f"[{bench_name}] step 01: system preparation complete")
     print(f"  BENCH_NAME={merged['BENCH_NAME']}")
