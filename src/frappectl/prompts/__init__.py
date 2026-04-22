@@ -1,5 +1,5 @@
 from .common import ask_text, ask_choice, ask_bool, ask_secret
-from .bench import ask_bench_name, ask_bench_user, ask_deploy_mode
+from .bench import ask_bench_name, ask_bench_user, ask_deploy_mode, select_bench_name
 from .site import (
     ask_site_name,
     ask_admin_password,
@@ -17,6 +17,7 @@ __all__ = [
     "ask_bench_name",
     "ask_bench_user",
     "ask_deploy_mode",
+    "select_bench_name",
     "ask_site_name",
     "ask_admin_password",
     "ask_db_root_password",

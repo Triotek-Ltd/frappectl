@@ -1,0 +1,285 @@
+
+# Step 2: System Cleanup & Layout
+
+## What Step 2 should achieve
+
+By the end of Step 2, your script should have:
+
+* cleaned the server
+* prepared the filesystem layout using the **real Step 1 values**
+* created the parent home path for the chosen bench user
+* prepared the final bench path using the chosen bench name
+* created support directories for logs, config, backups, and script state
+* prepared swap if needed
+* detected existing path conflicts before Bench install starts
+
+---
+
+## Inputs Step 2 must use from Step 1
+
+These should already exist from Step 1:
+
+```bash
+BENCH_USER=""
+BENCH_NAME=""
+DEPLOY_MODE=""
+SERVER_TIMEZONE=""
+SERVER_HOSTNAME=""
+PYTHON_BIN=""
+FRAPPE_BRANCH=""
+```
+
+Now Step 2 derives paths from those values.
+
+### Correct path model
+
+```bash
+BENCH_USER_HOME="/home/${BENCH_USER}"
+BENCH_PATH="${BENCH_USER_HOME}/${BENCH_NAME}"
+INSTALL_ROOT="/opt/frappe-installer"
+INSTALL_LOG_DIR="/var/log/frappe-installer"
+INSTALL_CONFIG_DIR="/etc/frappe-installer"
+BACKUP_ROOT="/opt/frappe-installer/backups"
+```
+
+So if the user gave:
+
+```bash
+BENCH_USER="alice"
+BENCH_NAME="eastafrica-bench"
+```
+
+then the script uses:
+
+```bash
+BENCH_USER_HOME="/home/alice"
+BENCH_PATH="/home/alice/eastafrica-bench"
+```
+
+That is the correct behavior.
+
+---
+
+## What Step 2 should cover
+
+### 1. Clean the server
+
+Actions:
+
+* remove unused packages
+* clean package cache
+* remove stale temporary files from earlier failed runs if applicable
+
+Typical cleanup:
+
+```bash
+sudo apt autoremove -y
+sudo apt autoclean -y
+sudo apt clean
+```
+
+Optional:
+
+* warn if previous Node, Yarn, MariaDB, Redis, or Frappe leftovers exist
+
+---
+
+### 2. Build the layout from the actual Step 1 values
+
+This is the key part you were correcting.
+
+The script should not invent names. It should derive layout from the real inputs:
+
+```bash
+BENCH_USER_HOME="/home/${BENCH_USER}"
+BENCH_PATH="${BENCH_USER_HOME}/${BENCH_NAME}"
+```
+
+That means:
+
+* user folder comes from `BENCH_USER`
+* bench folder comes from `BENCH_NAME`
+
+---
+
+### 3. Create the required directories
+
+The script should create only the paths it truly needs.
+
+#### Required directories
+
+```bash
+mkdir -p "${BENCH_USER_HOME}"
+mkdir -p "${INSTALL_ROOT}"
+mkdir -p "${INSTALL_LOG_DIR}"
+mkdir -p "${INSTALL_CONFIG_DIR}"
+mkdir -p "${BACKUP_ROOT}"
+```
+
+Important:
+
+* **do not create the bench itself with random assumptions**
+* creating `BENCH_PATH` before Bench init is optional, because `bench init ${BENCH_NAME}` will create it later under the chosen user context
+
+So here the safer approach is:
+
+* create the **user home**
+* create installer/config/log/backup roots
+* reserve `BENCH_PATH` as the target path
+* only create it yourself if your workflow truly requires pre-creation
+
+---
+
+### 4. Prepare support structure under installer root
+
+This can still be useful:
+
+```bash
+mkdir -p "${INSTALL_ROOT}/scripts"
+mkdir -p "${INSTALL_ROOT}/state"
+mkdir -p "${INSTALL_ROOT}/tmp"
+mkdir -p "${BACKUP_ROOT}"
+```
+
+This is fine because these are installer-owned support directories, not bench-owned guessed names.
+
+---
+
+### 5. Prepare swap if needed
+
+Step 2 can still handle swap.
+
+Logic:
+
+* check if swap exists
+* if not, ask whether to create it
+* create it only if disk space allows
+
+Suggested saved variables:
+
+```bash
+SWAP_ENABLED=""
+SWAP_SIZE_GB=""
+```
+
+---
+
+### 6. Check for existing conflicts using the real names
+
+This is where using the actual Step 1 values matters most.
+
+Check:
+
+* does `${BENCH_USER}` already exist?
+* does `${BENCH_USER_HOME}` already exist?
+* does `${BENCH_PATH}` already exist?
+* is there already a bench with the same name?
+* are there old production/service configs that may belong to an earlier install?
+
+If `${BENCH_PATH}` exists, prompt:
+
+```text
+Existing bench path detected:
+${BENCH_PATH}
+
+Choose:
+1. Reuse existing bench path
+2. Archive existing bench path
+3. Abort setup
+```
+
+That is much better than assuming anything.
+
+---
+
+### 7. Ownership and permissions
+
+Again, use the actual user value from Step 1.
+
+Examples:
+
+```bash
+chown -R root:root "${INSTALL_CONFIG_DIR}"
+chown -R root:root "${INSTALL_LOG_DIR}"
+```
+
+If the bench user already exists and you want their home to be correct:
+
+```bash
+chown -R "${BENCH_USER}:${BENCH_USER}" "${BENCH_USER_HOME}"
+```
+
+But only do that if the user already exists at this stage. If user creation belongs to Step 3 or 4, then Step 2 should only prepare the path logic and not force ownership yet.
+
+---
+
+## What Step 2 should ask interactively
+
+Only when needed:
+
+* swap missing: create swap?
+* existing `${BENCH_PATH}` found: reuse, archive, or abort?
+* existing installer directories found: keep or clean?
+
+No need for extra naming prompts here, because those already came from Step 1.
+
+---
+
+## What Step 2 should save
+
+```bash
+BENCH_USER_HOME=""
+BENCH_PATH=""
+INSTALL_ROOT=""
+INSTALL_LOG_DIR=""
+INSTALL_CONFIG_DIR=""
+BACKUP_ROOT=""
+SWAP_ENABLED=""
+SWAP_SIZE_GB=""
+BENCH_PATH_EXISTS=""
+BENCH_PATH_ACTION=""
+```
+
+---
+
+This is still only:
+
+* cleanup
+* layout
+* path preparation
+* conflict detection
+
+---
+
+## Correct Step 2 flow
+
+1. load Step 1 config
+2. clean package/system leftovers
+3. derive paths from `BENCH_USER` and `BENCH_NAME`
+4. create support directories
+5. check swap
+6. create swap if approved
+7. detect existing `${BENCH_USER_HOME}` and `${BENCH_PATH}` conflicts
+8. prompt for reuse/archive/abort if needed
+9. save updated config
+
+---
+
+## Correct end-of-step summary
+
+```text
+Step 2 complete
+
+Bench user: alice
+Bench user home: /home/alice
+Bench name: eastafrica-bench
+Bench target path: /home/alice/eastafrica-bench
+Installer root: /opt/frappe-installer
+Config dir: /etc/frappe-installer
+Log dir: /var/log/frappe-installer
+Backup root: /opt/frappe-installer/backups
+Swap: enabled (2G)
+Existing bench path conflicts: none
+```
+
+

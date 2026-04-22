@@ -1,0 +1,343 @@
+
+---
+Ask for the admin SSH public key to install on the server user.
+
+#  Step 3: Security Hardening
+
+## What Step 3 should achieve
+
+By the end of Step 3, your script should have:
+
+* created and secured the real `BENCH_USER`
+* locked down SSH access
+* reduced brute-force exposure
+* reduced account abuse and lateral movement
+* reduced network attack surface
+* added first-line protections against MITM on admin access
+* prepared the host for safer package installation and later Bench work
+
+---
+
+## What Step 3 should cover
+
+## 1. Create the actual bench user from Step 1
+
+Use the real value collected in Step 1:
+
+```bash
+BENCH_USER=""
+```
+
+Actions:
+
+* create the user if it does not exist
+* give it a home directory
+* add sudo only if your script design requires it
+* optionally create a dedicated admin group and allow SSH only for that group
+
+OpenSSH supports restricting SSH access with directives like `AllowGroups` and `AllowUsers`, so limiting who can log in is part of proper hardening. ([OpenBSD Manual Pages][2])
+
+### Better hardening choice
+
+Instead of “any local user can SSH in,” do this:
+
+* create group such as `sshadmins`
+* add `BENCH_USER` to it
+* configure SSH to allow only that group
+
+That reduces exposure if more users are later added. ([Ubuntu Help][3])
+
+---
+
+## 2. Harden SSH authentication
+
+This is the core of brute-force resistance.
+
+Recommended SSH server settings:
+
+* `PermitRootLogin no`
+* `PasswordAuthentication no`
+* `KbdInteractiveAuthentication no`
+* `PubkeyAuthentication yes`
+* `PermitEmptyPasswords no`
+* `MaxAuthTries` set lower than default
+* `AllowGroups sshadmins`
+* `X11Forwarding no`
+* `AllowAgentForwarding no`
+* `AllowTcpForwarding no` unless you truly need it
+* `PermitTunnel no`
+
+These are all valid `sshd_config` controls documented in the OpenSSH server configuration manual. ([OpenBSD Manual Pages][2])
+
+### Why this matters
+
+* disabling password auth removes the most common SSH brute-force path
+* disabling root login improves accountability and removes direct root-target login attempts
+* restricting forwarding reduces abuse of the SSH daemon as a pivot/tunnel
+
+Ubuntu’s current SSH hardening guidance also recommends disabling root login, eliminating passwords, and restricting network access. ([Ubuntu][4])
+
+---
+
+## 3. Protect against brute force
+
+Use multiple layers, not just one.
+
+### Layer A: key-only SSH
+
+With `PasswordAuthentication no`, attackers cannot brute-force account passwords through SSH in the usual way. `PasswordAuthentication` and `PubkeyAuthentication` are standard OpenSSH controls. ([OpenBSD Manual Pages][2])
+
+### Layer B: Fail2ban
+
+Install and enable Fail2ban for SSH.
+
+Fail2ban is designed to detect authentication failures and ban offending IPs, and its jail configuration model is documented through `jail.conf`/`jail.local`. Ubuntu’s package docs recommend customizations in `.local` files rather than editing shipped `.conf` files directly. ([Ubuntu Manpages][5])
+
+Recommended SSH jail behavior in your script:
+
+* enable SSH jail
+* use a moderate `findtime`
+* use a moderate `maxretry`
+* use a meaningful `bantime`
+* whitelist only trusted admin IPs if necessary
+
+### Layer C: firewall source restriction
+
+If the admin has a fixed office/VPN IP, restrict SSH to that source range instead of exposing it globally. Ubuntu guidance recommends firewalls and limiting access ranges as part of SSH hardening. ([Ubuntu Help][6])
+
+---
+
+## 4. Add first-line MITM protections for SSH administration
+
+This is the part you explicitly asked for.
+
+### Important truth
+
+SSH already provides encrypted communication between untrusted hosts, but MITM protection depends on **correct host key verification**. OpenSSH’s client docs state that `StrictHostKeyChecking yes` provides maximum protection against man-in-the-middle attacks, and changed host keys are refused. ([OpenBSD Manual Pages][7])
+
+So Step 3 should include:
+
+### Server-side actions
+
+* generate/verify server host keys
+* record and display host key fingerprints after setup
+* save the fingerprints into your installer state file
+* show the operator a post-step message telling them to verify fingerprints on first SSH login from client machines
+
+### Client guidance your script should print
+
+For admin machines, recommend:
+
+* `StrictHostKeyChecking ask` or `yes`
+* never ignore host key change warnings
+* pre-load the server fingerprint into known_hosts where possible
+
+OpenSSH also documents:
+
+* `CheckHostIP yes` as a way to detect host key changes associated with DNS spoofing
+* `VerifyHostKeyDNS yes|ask` for SSHFP-based verification
+* `UpdateHostKeys` for graceful host-key rotation after trust is established. ([OpenBSD Manual Pages][1])
+
+### Practical script behavior
+
+At the end of Step 3, your script should print something like:
+
+```text
+SSH host fingerprints:
+- ED25519: <fingerprint>
+- ECDSA: <fingerprint>
+
+Verify these on the admin workstation before accepting the first SSH connection.
+Do not ignore host key change warnings.
+```
+
+That is the safest honest way to treat MITM here.
+
+---
+
+## 5. Lock down the network surface with a firewall
+
+Use UFW with a deny-by-default inbound policy.
+
+Ubuntu’s UFW docs state that the typical secure baseline is:
+
+* deny incoming
+* allow outgoing
+* explicitly allow only needed services. ([Ubuntu Help][6])
+
+Recommended Step 3 firewall state:
+
+* allow SSH only
+* allow HTTP/HTTPS later when needed
+* deny all other inbound by default
+* optionally restrict SSH by source IP
+
+At this stage:
+
+* open SSH
+* do **not** open database or Redis externally
+* leave application ports closed until later steps
+
+---
+
+## 6. Protect package downloads and repo trust
+
+Since Step 5 will install many packages, Step 3 should ensure the host is prepared for safer package retrieval.
+
+Actions:
+
+* ensure system CA certificates are present
+* keep package indexes updated from the distro package manager
+* avoid unsigned third-party package sources unless explicitly approved
+* store third-party repo keys in the modern signed-by style later, not legacy global trust
+
+I’m keeping this high-level because the exact repo additions happen in Step 5, but this matters for supply-chain risk.
+
+---
+
+## 7. Reduce account and session abuse
+
+Recommended SSH/session hardening:
+
+* lower `MaxAuthTries`
+* set reasonable idle disconnects with `ClientAliveInterval` and `ClientAliveCountMax`
+* disable unused forwarding features
+* disable environment injection features you do not need
+
+These are all standard OpenSSH server options. ([OpenBSD Manual Pages][2])
+
+This helps against:
+
+* credential spraying
+* unattended admin sessions
+* use of SSH as a tunnel for unintended traffic
+* some post-compromise abuse paths
+
+---
+
+## 8. Optional stronger admin protections
+
+These should be optional toggles in your script.
+
+### MFA for SSH
+
+Ubuntu’s current SSH hardening guidance recommends enforcing MFA through PAM/identity-provider integrations if available. ([Ubuntu][4])
+
+### VPN-only SSH
+
+Safer than exposing SSH to the whole internet.
+
+### Non-default SSH port
+
+This can reduce noise and opportunistic scans, but it is not a substitute for key auth, firewall rules, or Fail2ban. I’d mark it optional, not primary.
+
+---
+
+## 9. Safe SSH change procedure
+
+This is critical.
+
+Your script should **not** disable root login or password auth until it has:
+
+* confirmed a public key is installed for `BENCH_USER`
+* validated `sshd_config`
+* restarted/reloaded SSH safely
+* warned the operator to test a second SSH session before closing the first one
+
+That avoids lockout while hardening.
+
+---
+
+# What Step 3 should ask interactively
+
+Only ask what affects safety:
+
+### Required prompts
+
+* Reuse existing `BENCH_USER` if already present?
+* Provide SSH public key path or paste public key?
+* Restrict SSH to a trusted IP/CIDR now?
+* Enable Fail2ban?
+* Enable MFA later placeholder?
+* Proceed with disabling root login?
+* Proceed with disabling password login after key installation is confirmed?
+
+### Optional prompts
+
+* SSH port change?
+* Allow only `sshadmins` group?
+* Enable stricter SSH client guidance output?
+
+---
+
+# What Step 3 should save
+
+```bash
+BENCH_USER_CREATED=""
+BENCH_USER_REUSED=""
+SSH_GROUP_NAME="sshadmins"
+SSH_PORT=""
+SSH_HARDENED=""
+SSH_PASSWORD_DISABLED=""
+SSH_ROOT_LOGIN_DISABLED=""
+SSH_IP_RESTRICTED=""
+SSH_ALLOWED_CIDR=""
+FAIL2BAN_ENABLED=""
+SSH_HOSTKEY_FINGERPRINT_ED25519=""
+SSH_HOSTKEY_FINGERPRINT_ECDSA=""
+```
+
+---
+
+# What Step 3 should NOT do
+
+Still do not:
+
+* install nginx
+* install mariadb
+* install redis
+* install bench
+* create the bench
+* create the site
+* configure HTTPS for browsers
+
+Browser-facing MITM protection belongs to HTTPS/TLS later, while this step focuses on admin access and host security. ([OpenBSD Manual Pages][7])
+
+---
+
+# Recommended Step 3 flow
+
+1. load Step 1 and Step 2 config
+2. create or reuse the real `BENCH_USER`
+3. create `sshadmins` group and add the user
+4. install public key for `BENCH_USER`
+5. back up current `sshd_config`
+6. apply hardened SSH settings
+7. validate SSH config before reload
+8. configure UFW with deny-incoming baseline and SSH allow rule
+9. optionally restrict SSH to trusted source IP/CIDR
+10. install and configure Fail2ban SSH jail
+11. collect and display SSH host key fingerprints
+12. save all hardening state
+
+---
+
+# Best final definition of Step 3
+
+Step 3 should cover:
+
+* real bench-user creation
+* SSH hardening with key-only auth
+* brute-force resistance with Fail2ban and firewall restrictions
+* reduced SSH attack surface
+* first-line MITM defenses through host key fingerprinting and strict verification guidance
+* safer admin-access baseline before package and Bench installation
+
+
+[1]: https://man.openbsd.org/ssh_config "ssh_config(5) - OpenBSD manual pages"
+[2]: https://man.openbsd.org/sshd_config?utm_source=chatgpt.com "sshd_config(5) - OpenBSD manual pages"
+[3]: https://help.ubuntu.com/community/SSH/OpenSSH/Configuring?utm_source=chatgpt.com "SSH/OpenSSH/Configuring - Community Help Wiki"
+[4]: https://ubuntu.com/blog/how-to-harden-ubuntu-ssh-cloud?utm_source=chatgpt.com "How to Harden Ubuntu SSH: From static keys to cloud ..."
+[5]: https://manpages.ubuntu.com/manpages/bionic//man5/jail.conf.5.html?utm_source=chatgpt.com "jail.conf - configuration for the fail2ban server"
+[6]: https://help.ubuntu.com/community/UFW?utm_source=chatgpt.com "UFW - Community Help Wiki"
+[7]: https://man.openbsd.org/ssh.1?utm_source=chatgpt.com "ssh(1) - OpenBSD manual pages"

@@ -86,6 +86,13 @@ def set_default_site(name: str, cwd: str, user: str | None = None):
     return run(cmd, cwd=cwd)
 
 
+def set_site_config(site: str, key: str, value: str, cwd: str, user: str | None = None):
+    cmd = ["bench", "--site", site, "set-config", key, value]
+    if user:
+        return run(_user_shell(cmd), cwd=cwd, user=user)
+    return run(cmd, cwd=cwd)
+
+
 def install_app(site: str, app_name: str, cwd: str, user: str | None = None):
     cmd = ["bench", "--site", site, "install-app", app_name]
     if user:

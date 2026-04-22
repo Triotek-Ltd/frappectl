@@ -50,6 +50,7 @@ def status_cmd(
     config = load_config(bench_name)
 
     typer.echo(f"Apps status for: {bench_name}")
+    typer.echo(f"  FETCH_APPS_MODE={config.get('FETCH_APPS_MODE', '')}")
     typer.echo(f"  SELECTED_INDUSTRY={config.get('SELECTED_INDUSTRY', '')}")
     typer.echo(f"  SELECTED_BUSINESS_MODULES={config.get('SELECTED_BUSINESS_MODULES', '')}")
     typer.echo(f"  FINAL_APPS_LIST={config.get('FINAL_APPS_LIST', '')}")

@@ -93,7 +93,7 @@ def collect_bench_identity(bench_name: str) -> dict[str, str]:
     if not is_valid_username(bench_user):
         raise ValueError(f"Invalid bench user: {bench_user}")
 
-    deploy_mode = existing.get("DEPLOY_MODE") or ask_deploy_mode()
+    deploy_mode = existing.get("DEPLOY_MODE") or ask_deploy_mode(default="production")
     deploy_mode = deploy_mode.strip()
 
     return {

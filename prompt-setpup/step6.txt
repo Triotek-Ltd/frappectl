@@ -1,0 +1,284 @@
+
+---
+
+# 🎯 What Step 6 should achieve
+
+By the end of Step 6:
+
+* Bench CLI is installed system-wide (or for the user)
+* The bench environment is initialized using:
+
+  * `BENCH_USER`
+  * `BENCH_NAME`
+  * `FRAPPE_BRANCH`
+  * `PYTHON_BIN`
+* A working bench directory exists at:
+
+  ```bash
+  /home/${BENCH_USER}/${BENCH_NAME}
+  ```
+* The bench user can run bench commands successfully
+
+---
+
+# 🔑 Important principle
+
+👉 Bench must be installed and run as the **bench user**, NOT root.
+
+So Step 6 must **switch context** to:
+
+```bash
+su - ${BENCH_USER}
+```
+
+---
+
+# 🧩 What Step 6 should cover
+
+## 1. Install Bench CLI
+
+Bench is installed via pip:
+
+```bash
+pip3 install frappe-bench
+```
+
+Optional (better control):
+
+```bash
+pip3 install --user frappe-bench
+```
+
+---
+
+## 2. Verify bench installation
+
+```bash
+bench --version
+```
+
+If this fails → stop the script.
+
+---
+
+## 3. Initialize the bench (core step)
+
+This is the most important command:
+
+```bash
+bench init ${BENCH_NAME}
+```
+
+---
+
+## 🔧 With your script variables
+
+Use the values from Step 1:
+
+```bash
+bench init ${BENCH_NAME} \
+  --frappe-branch ${FRAPPE_BRANCH} \
+  --python ${PYTHON_BIN}
+```
+
+---
+
+## 🧠 What this does internally
+
+* creates bench directory
+* creates Python virtual environment
+* installs Frappe framework
+* installs Node dependencies
+* prepares `sites/`, `apps/`, `config/` structure
+
+---
+
+## 📍 Resulting structure
+
+```bash
+/home/${BENCH_USER}/${BENCH_NAME}/
+├── apps/
+├── sites/
+├── env/
+├── config/
+├── logs/
+```
+
+---
+
+## 4. Handle existing bench path (IMPORTANT)
+
+From Step 2 you already checked:
+
+```bash
+${BENCH_PATH}
+```
+
+Now enforce the decision:
+
+### If exists:
+
+Prompt:
+
+```text
+Bench path already exists:
+${BENCH_PATH}
+
+1. Reuse existing bench
+2. Archive existing bench
+3. Abort
+```
+
+---
+
+## 5. Switch into bench directory
+
+```bash
+cd ${BENCH_PATH}
+```
+
+---
+
+## 6. Verify bench is functional
+
+Run:
+
+```bash
+bench version
+```
+
+or:
+
+```bash
+bench src
+```
+
+If this fails → stop.
+
+---
+
+## 7. Optional: Development start test
+
+For sanity check:
+
+```bash
+bench start
+```
+
+👉 optional — mainly for dev mode
+
+---
+
+# 🧠 What Step 6 should ask
+
+### Required prompts (if not already captured)
+
+* confirm bench initialization?
+* confirm branch to use?
+
+---
+
+### Optional prompts
+
+* use shallow clone? (faster)
+* skip Redis config? (rare case)
+* verbose install?
+
+---
+
+# 💾 What Step 6 should save
+
+```bash
+BENCH_INSTALLED=""
+BENCH_INIT_SUCCESS=""
+BENCH_PATH=""
+BENCH_USER=""
+FRAPPE_BRANCH=""
+PYTHON_BIN=""
+BENCH_ENV_READY=""
+```
+
+---
+
+# ⚠️ What Step 6 should NOT do
+
+Do NOT:
+
+* create site (`bench new-site`) → Step 8
+* get apps → Step 7
+* setup production → Step 9
+* configure nginx → Step 9
+* enable HTTPS → Step 10
+
+---
+
+# 🔁 Correct Step 6 flow
+
+1. load config (Steps 1–5)
+2. switch to `BENCH_USER`
+3. install bench CLI
+4. verify bench installed
+5. check `${BENCH_PATH}` conflict
+6. run `bench init` with:
+
+   * bench name
+   * frappe branch
+   * python
+7. cd into bench directory
+8. verify bench works
+9. save state
+
+---
+
+# ✅ End-of-step summary
+
+```text
+Step 6 complete
+
+Bench user: alice
+Bench name: eastafrica-bench
+Bench path: /home/alice/eastafrica-bench
+Frappe branch: version-16
+Python: /usr/bin/python3
+Bench installed: yes
+Bench initialized: yes
+```
+
+---
+
+# 🔥 Critical success condition
+
+If Step 6 fails:
+
+👉 Everything after this fails
+
+Because:
+
+* no bench = no apps
+* no apps = no site
+* no site = no system
+
+---
+
+# 💡 Pro tip for your script
+
+Add this check:
+
+```bash
+if [ ! -d "${BENCH_PATH}/apps/frappe" ]; then
+  echo "ERROR: Frappe not installed correctly"
+  exit 1
+fi
+```
+
+---
+
+Step 6 should cover:
+
+* installing bench CLI
+* initializing bench with user-provided values
+* creating the bench directory structure
+* verifying bench functionality
+* preparing the environment for app installation
+
+---

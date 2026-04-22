@@ -1,0 +1,560 @@
+
+# Step 11: Bench Operations
+
+## What Step 11 is
+
+This is the **interactive Bench control center** inside your script.
+
+Everything from Steps 1–10 prepares the server, bench, site, apps, production, and HTTPS.
+
+Then **Step 11** becomes the part that asks:
+
+```text
+What do you want to do today?
+```
+
+and lets the operator run bench-related tasks on demand.
+
+So Step 11 is not a one-time setup step like the others.
+It is the **operational menu layer** for ongoing use.
+
+---
+
+## What Step 11 should achieve
+
+By the end of Step 11, your script should provide an interactive menu that can:
+
+* manage the bench itself
+* manage apps
+* manage the default site and other sites
+* handle backups and restores
+* run updates, upgrades, and maintenance
+* inspect and control scheduler/workers/jobs
+* manage production services
+* run diagnostics
+* safely gate dangerous actions
+
+That matches the structure in your uploaded menu tree. 
+
+---
+
+# Step 11 structure
+
+## Entry flow
+
+When the script reaches this step, it should show something like:
+
+```text
+Bench setup is ready.
+What do you want to do today?
+
+1. Run default site setup flow
+2. Open Bench Operations
+3. Continue without bench operations
+0. Exit
+```
+
+That flow is already part of the menu tree you uploaded. 
+
+If the operator chooses **Open Bench Operations**, then show the main menu.
+
+---
+
+## Main Bench Operations Menu
+
+```text
+Bench Operations
+================
+1. Bench Lifecycle
+2. App Management
+3. Default Site and Site Management
+4. Backup and Restore
+5. Updates, Upgrades, and Maintenance
+6. Scheduler, Workers, and Jobs
+7. Production and Service Control
+8. Diagnostics and Admin Tools
+9. Dangerous Operations
+0. Back / Exit
+```
+
+This is the exact top-level structure we should use for Step 11. 
+
+---
+
+# 1. Bench Lifecycle
+
+This submenu is for bench-level operations.
+
+### Menu
+
+```text
+Bench Lifecycle
+===============
+1. Initialize Bench
+2. Start Bench (Development)
+3. Show Bench Version
+4. Show Bench Source Info
+5. Show Bench Help
+0. Back
+```
+
+### What it covers
+
+* initialize a bench
+* start development bench
+* show version
+* inspect bench source/setup
+* show help
+
+### Wrapper command mapping
+
+* `bench init`
+* `bench start`
+* `bench version`
+* `bench src`
+* `bench --help`
+
+This matches your uploaded menu exactly. 
+
+---
+
+# 2. App Management
+
+This submenu is for app fetch/install/update actions.
+
+### Menu
+
+```text
+App Management
+==============
+1. Get App
+2. Install App on Default Site
+3. Install App on Another Site
+4. Uninstall App from Site
+5. List Apps on Site
+6. Update App Source Code
+7. Switch App Branch
+8. Show Available App Groups
+0. Back
+```
+
+### What it covers
+
+* fetch app repo
+* install app on default site
+* install app on another site
+* uninstall app
+* list installed apps
+* update app source code
+* switch branch
+* show grouped app catalog
+
+### Important for your design
+
+This is where your earlier grouped app structure plugs in:
+
+* foundation apps
+* cross-industry business apps
+* industry verticals
+
+So **Show Available App Groups** should display the groups you built earlier, then resolve repos from your config. 
+
+---
+
+# 3. Default Site and Site Management
+
+This submenu is for all site-level work.
+
+### Menu
+
+```text
+Default Site and Site Management
+================================
+1. Create Default Site
+2. Set Default Site
+3. Use Site
+4. List Sites
+5. Migrate Site
+6. Reinstall Site
+7. Drop Site
+8. Set Site Config
+9. Show Current Default Site
+0. Back
+```
+
+### What it covers
+
+* create default site
+* change default site
+* use another site
+* list sites
+* migrate site
+* reinstall site
+* drop site
+* set config
+* inspect current default site
+
+### Safety rules
+
+* **Reinstall Site** must always confirm
+* **Drop Site** must always confirm
+
+That rule is already in your uploaded menu and should remain exactly that way. 
+
+---
+
+# 4. Backup and Restore
+
+This submenu is for recovery and protection.
+
+### Menu
+
+```text
+Backup and Restore
+==================
+1. Backup Default Site
+2. Backup Another Site
+3. Backup All Sites
+4. Restore Site from Backup
+5. Validate Backup Path
+6. Backup Before Upgrade
+0. Back
+```
+
+### What it covers
+
+* backup default site
+* backup another site
+* backup all sites
+* restore from backup
+* validate restore path
+* run backup before upgrade
+
+### Important rule
+
+* restore must always confirm
+* backup-before-upgrade can be called automatically by update flows
+
+That logic is already part of the tree you provided. 
+
+---
+
+# 5. Updates, Upgrades, and Maintenance
+
+This submenu is for ongoing change management.
+
+### Menu
+
+```text
+Updates, Upgrades, and Maintenance
+==================================
+1. Update All Apps and Bench
+2. Pull Latest Changes Only
+3. Update Bench Only
+4. Update One App Only
+5. Upgrade Default Site
+6. Upgrade Another Site
+7. Migrate Default Site
+8. Migrate Another Site
+9. Build Assets
+10. Clear Cache
+11. Clear Website Cache
+12. Full Maintenance Run
+0. Back
+```
+
+### What it covers
+
+* full update
+* pull only
+* bench-only update
+* one-app update
+* upgrade default or other site
+* migrate site
+* build assets
+* clear cache
+* clear website cache
+* full maintenance shortcut
+
+### Suggested logic
+
+For **Update All Apps and Bench**:
+
+1. confirm production impact
+2. optional backup
+3. run update
+4. optional restart
+
+For **Update One App Only**:
+
+1. choose app
+2. pull app code
+3. ask migrate site
+4. ask build assets
+5. ask restart
+
+For **Full Maintenance Run**:
+
+1. backup
+2. pull/update
+3. migrate
+4. build
+5. clear cache
+6. optional restart
+
+All of that is already in the uploaded definition and should become the Step 11 behavior. 
+
+---
+
+# 6. Scheduler, Workers, and Jobs
+
+This is the real **bench jobs center**.
+
+### Menu
+
+```text
+Scheduler, Workers, and Jobs
+============================
+1. Enable Scheduler on Default Site
+2. Disable Scheduler on Default Site
+3. Enable Scheduler on Another Site
+4. Disable Scheduler on Another Site
+5. Run Bench Doctor
+6. Check Scheduler Status
+7. Check Worker Status
+8. Check Pending Jobs
+9. Restart Job Processes
+10. Full Jobs Health Check
+0. Back
+```
+
+### What it covers
+
+* enable scheduler
+* disable scheduler
+* inspect scheduler
+* inspect workers
+* inspect pending jobs
+* restart job-related processes
+* combined health check
+
+### Full Jobs Health Check should run
+
+* doctor
+* scheduler check
+* worker check
+* pending jobs check
+
+That exact grouping is already locked in your uploaded menu tree. 
+
+---
+
+# 7. Production and Service Control
+
+This is for service-level production operations.
+
+### Menu
+
+```text
+Production and Service Control
+==============================
+1. Setup Production
+2. Setup / Regenerate Nginx Config
+3. Restart Bench Services
+4. Reload Nginx
+5. Restart Supervisor / Systemd Services
+6. Safe Restart Flow
+7. Force Restart Flow
+0. Back
+```
+
+### What it covers
+
+* setup production
+* regenerate nginx config
+* restart bench services
+* reload nginx
+* restart supervisor/systemd services
+* safe restart flow
+* force restart flow
+
+### Suggested logic
+
+**Safe Restart Flow**
+
+* detect environment
+* warn if production
+* restart only required services
+
+**Force Restart Flow**
+
+* full confirmation required
+* admin use only
+
+This should stay exactly as defined earlier. 
+
+---
+
+# 8. Diagnostics and Admin Tools
+
+This submenu is for troubleshooting and advanced admin tasks.
+
+### Menu
+
+```text
+Diagnostics and Admin Tools
+===========================
+1. Run Bench Doctor
+2. Show Bench Version
+3. Execute Python Function
+4. Set Config
+5. Transform Database
+6. Trim Tables
+7. Full Environment Health Check
+0. Back
+```
+
+### What it covers
+
+* doctor
+* version check
+* execute Python path/function
+* set config
+* transform database
+* trim tables
+* run full environment health check
+
+### Full Environment Health Check should run
+
+* bench doctor
+* bench version
+* site availability checks
+* scheduler status
+* worker status
+* pending jobs check
+
+That logic also comes directly from your uploaded tree. 
+
+---
+
+# 9. Dangerous Operations
+
+This submenu is for destructive actions only.
+
+### Menu
+
+```text
+Dangerous Operations
+====================
+1. Reinstall Default Site
+2. Reinstall Another Site
+3. Drop Default Site
+4. Drop Another Site
+5. Restore Over Existing Site
+6. Force Restart Production Services
+0. Back
+```
+
+### Mandatory rules
+
+Every action here must:
+
+* ask for confirmation
+* ask again with typed confirmation
+* optionally require site name re-entry
+
+### Best confirmation style
+
+```text
+This operation is destructive.
+Type the site name to continue:
+```
+
+Those rules are already part of the uploaded definition and should be enforced in Step 11. 
+
+---
+
+# Hidden helper actions for Step 11
+
+These do not need to appear as menu items, but your script should have them as internal functions.
+
+### Internal helpers
+
+* `select_site`
+* `select_app`
+* `confirm_action`
+* `confirm_dangerous_action`
+* `auto_backup_if_enabled`
+* `detect_production_mode`
+* `restart_if_needed`
+* `log_action`
+* `show_success`
+* `show_error`
+
+These were already identified in the uploaded menu tree and are exactly the helper layer Step 11 needs. 
+
+---
+
+# Quick Actions block
+
+You also included useful quick actions, and I think they should appear above the full menu.
+
+### Quick Actions
+
+```text
+Quick Actions
+=============
+1. Create and prepare default site
+2. Install apps by industry profile
+3. Update default site safely
+4. Run jobs health check
+5. Backup default site now
+```
+
+These are smart wrappers around deeper menu actions and make the CLI feel better for daily operations. 
+
+---
+
+# What Step 11 should use from previous steps
+
+Step 11 should load and reuse values already collected and created in Steps 1–10, including:
+
+* `BENCH_USER`
+* `BENCH_NAME`
+* `BENCH_PATH`
+* `DEFAULT_SITE_NAME`
+* selected apps/groups
+* production mode
+* SSL state
+* backup root
+* service state
+
+So Step 11 is not a fresh setup step. It is an **operational control layer built on all previous state**.
+
+---
+
+# What Step 11 should achieve in script terms
+
+By the end of Step 11, your script should have:
+
+* a nested interactive menu system
+* command wrappers for real bench actions
+* safe handling for destructive flows
+* reusable helper functions
+* quick actions for common jobs
+* the ability to keep running until the operator exits
+
+So Step 11 is really:
+
+## Final definition of Step 11
+
+**Bench Operations** should cover:
+
+* the full interactive Bench Operations menu tree
+* submenus for lifecycle, apps, sites, backups, updates, jobs, production, diagnostics, and dangerous tasks
+* helper functions for selection, confirmation, backup, restart, and logging
+* quick actions for the most common operator tasks
+* safe looping so the operator can perform multiple actions before exiting
+
+That definition comes directly from the menu tree . 
+

@@ -1,0 +1,328 @@
+
+# Step 9: Production Setup
+
+## What Step 9 should achieve
+
+By the end of Step 9, your script should have:
+
+* switched the bench from a dev-style layout to a production-style layout
+* generated and applied production configs
+* wired the bench to **NGINX** and **Supervisor**
+* ensured the production processes are managed properly
+* prepared the site to be served through the reverse proxy
+* verified that the production stack is healthy before HTTPS is added
+
+Bench production in Frappe uses NGINX as the reverse proxy and Supervisor for process management, while the actual Frappe processes include Gunicorn, Redis worker processes, and the scheduler. ([Frappe Docs][1])
+
+---
+
+## What Step 9 should cover
+
+## 1. Confirm production mode
+
+This step should only proceed if the deployment mode selected earlier is `production`.
+
+If the script is in development mode, it should:
+
+* skip Step 9 entirely, or
+* warn and ask whether to continue anyway
+
+That keeps the script consistent with your earlier design.
+
+---
+
+## 2. Make sure the prerequisite services are already installed
+
+Before production setup begins, Step 9 should verify that these already exist from Step 5:
+
+* NGINX
+* Supervisor
+* MariaDB
+* Redis
+
+This matters because Bench’s production flow generates configs for NGINX and Supervisor, while system-level services like MariaDB and Redis remain external dependencies. ([Frappe Docs][2])
+
+### Required checks
+
+* `systemctl is-active mariadb`
+* `systemctl is-active redis-server`
+* `systemctl is-active nginx`
+* `systemctl is-active supervisor`
+
+If one of these is missing or inactive, Step 9 should stop.
+
+---
+
+## 3. Switch to the real bench context
+
+This step should run against the actual initialized bench:
+
+```bash
+su - ${BENCH_USER}
+cd ${BENCH_PATH}
+```
+
+That ensures production configs are generated for the correct bench.
+
+---
+
+## 4. Run Bench production setup
+
+This is the main production action.
+
+The official docs describe the easy production path as:
+
+```bash
+sudo bench setup production
+```
+
+and the Bench command docs describe `production` as setting up a Frappe production environment for the specified user, including generating NGINX and Supervisor configuration. ([Frappe Docs][1])
+
+### In your script
+
+You should use the actual bench owner:
+
+```bash
+sudo bench setup production ${BENCH_USER}
+```
+
+or the exact production form supported by your target Bench version.
+
+### What this should do
+
+* generate Supervisor config for bench-managed processes
+* generate NGINX config for the bench/sites
+* prepare the service files/config layout for production
+
+---
+
+## 5. Explicitly handle NGINX config generation
+
+Even if production setup generates it, your script should treat NGINX config as a first-class production concern.
+
+Bench docs list `nginx` setup/generation as a production-related command area. ([Frappe Docs][2])
+
+### Step 9 should verify:
+
+* NGINX config file was generated
+* the site/default host is represented properly
+* config syntax is valid before reload
+
+### Good script behavior
+
+Run:
+
+* NGINX config test
+* reload NGINX only if the test passes
+
+This is one of the most important safety checks in the whole script.
+
+---
+
+## 6. Explicitly handle Supervisor config generation
+
+Bench production wiring also relies on Supervisor for the Frappe production processes. The Frappe background services docs state that, in production, Frappe services are defined in `config/supervisor.conf`, and the production environment uses Gunicorn plus worker and scheduler processes. ([Frappe Docs][3])
+
+### Step 9 should verify:
+
+* Supervisor config exists for the bench
+* Supervisor has re-read the config
+* Supervisor has updated its managed programs
+* the bench processes are now managed correctly
+
+### Production-managed process types to expect
+
+* Gunicorn/web process
+* Redis workers
+* scheduler
+* socket/realtime-related process depending on stack
+
+Those are the real background/runtime pieces your later Bench Operations menu will manage and inspect. ([Frappe Docs][3])
+
+---
+
+## 7. Reload or restart production services safely
+
+After config generation, Step 9 should safely apply service changes.
+
+### Service actions
+
+* reload/restart Supervisor
+* reload NGINX
+
+### Safety rule
+
+Because this is setup time, these restarts can be automatic here unless the script detects an existing live production deployment.
+
+That matches your earlier rule:
+
+* during first setup: auto is fine
+* on an already-live system: ask first
+
+---
+
+## 8. Prepare multi-site/default-site production routing
+
+Since your script is centered around the **default site**, Step 9 should verify that the default site is what production traffic will target.
+
+This ties back to your Step 8 work:
+
+* default site exists
+* default site is set
+* NGINX config aligns with the intended domain/site mapping
+
+Frappe site configuration is stored in site config, and custom domains/host-related details are part of the site configuration layer. ([Frappe Docs][4])
+
+So Step 9 should verify:
+
+* intended default site name is correct
+* production config points to that site/bench cleanly
+
+---
+
+## 9. Verify the production process model is healthy
+
+Before moving to HTTPS, Step 9 should verify that the production stack is alive.
+
+### Minimum checks
+
+* Supervisor process group(s) present
+* worker processes present
+* scheduler process present
+* NGINX active
+* MariaDB active
+* Redis active
+
+The background-services docs make clear that in production the Frappe services are process-managed and include workers and scheduler, not just the web process. ([Frappe Docs][3])
+
+---
+
+## 10. Optional production hardening at this step
+
+These are appropriate here if you want them before HTTPS:
+
+* disable the default NGINX site if not needed
+* ensure only intended bench/site configs are active
+* verify logs directory exists
+* verify log rotation is in place or planned
+
+Frappe’s logging docs note that production and development environments both generate logs, and server logs are managed as files. ([Frappe Docs][5])
+
+---
+
+# What Step 9 should ask interactively
+
+## Required prompts
+
+* Proceed with production setup now?
+* Is this a fresh production deployment or an existing live one?
+* Auto-restart services after config generation?
+
+## Conditional prompts
+
+If an existing live deployment is detected:
+
+* reload NGINX now?
+* restart/reload Supervisor now?
+
+## Optional prompts
+
+* disable default NGINX site if present?
+* regenerate production config if already exists?
+
+---
+
+# What Step 9 should save
+
+```bash
+PRODUCTION_SETUP_ENABLED=""
+PRODUCTION_SETUP_COMPLETE=""
+NGINX_CONFIG_GENERATED=""
+NGINX_CONFIG_TESTED=""
+NGINX_RELOADED=""
+SUPERVISOR_CONFIG_GENERATED=""
+SUPERVISOR_REREAD_DONE=""
+SUPERVISOR_UPDATED=""
+PRODUCTION_PROCESSES_ACTIVE=""
+DEFAULT_SITE_PRODUCTION_READY=""
+```
+
+---
+
+# What Step 9 should NOT do
+
+Step 9 should not yet:
+
+* issue SSL certificates
+* configure HTTPS redirects
+* do final browser-trust setup
+
+That belongs to **Step 10: Enable HTTPS**.
+
+It also should not become the full jobs menu; Step 11 remains your interactive **Bench Operations / jobs/services** center.
+
+---
+
+# Recommended Step 9 flow
+
+1. load config from Steps 1–8
+2. verify deployment mode is production
+3. verify NGINX, Supervisor, MariaDB, and Redis are installed and active
+4. switch to `${BENCH_USER}` and enter `${BENCH_PATH}`
+5. run Bench production setup
+6. verify NGINX config generation
+7. test NGINX config
+8. re-read/update Supervisor configs
+9. reload/restart NGINX and Supervisor safely
+10. verify worker/scheduler/web production processes
+11. save production-ready state
+
+---
+
+# Suggested end-of-step summary
+
+```text
+Step 9 complete
+
+Production mode: enabled
+Bench user: alice
+Bench path: /home/alice/eastafrica-bench
+Default site: erp.example.com
+NGINX config: generated and tested
+NGINX reload: successful
+Supervisor config: generated
+Supervisor reread/update: successful
+Production processes: active
+Production ready: yes
+```
+
+---
+
+# Important design note
+
+This is the step where your script should stop thinking in terms of “bench files only” and start thinking in terms of a **live service stack**:
+
+* NGINX fronts the app
+* Supervisor keeps the Frappe processes running
+* Redis/MariaDB support the app
+* the default site is now ready to be exposed
+
+That production model is exactly how Bench/Frappe documentation frames the production environment. ([Frappe Docs][1])
+
+## Final definition of Step 9
+
+Step 9 should cover:
+
+* Bench production setup
+* NGINX production config generation and validation
+* Supervisor production config generation and activation
+* safe service reloads/restarts
+* verification that the production process model is healthy
+* preparing the system for Step 10 HTTPS setup
+
+
+[1]: https://docs.frappe.io/framework/user/en/bench/guides/setup-production?utm_source=chatgpt.com "Setup Production - Documentation for Frappe Apps"
+[2]: https://docs.frappe.io/framework/user/en/bench/bench-commands?utm_source=chatgpt.com "Bench Commands - Documentation for Frappe Apps"
+[3]: https://docs.frappe.io/framework/user/en/bench/resources/background-services?utm_source=chatgpt.com "Background Services - Documentation for Frappe Apps"
+[4]: https://docs.frappe.io/framework/user/en/basics/site_config?utm_source=chatgpt.com "Configuration - Documentation for Frappe Apps"
+[5]: https://docs.frappe.io/framework/user/en/logging?utm_source=chatgpt.com "Logging - Documentation for Frappe Apps"

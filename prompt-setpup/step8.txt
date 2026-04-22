@@ -1,0 +1,398 @@
+
+## What Step 8 should achieve
+
+By the end of Step 8, your script should have:
+
+* created the **default site**
+* configured its database access
+* installed the selected apps on that site
+* set it as the **default bench site**
+* applied the first essential site configs
+* verified the site is valid before production setup
+
+This step should use the real values collected earlier, especially:
+
+* `BENCH_USER`
+* `BENCH_NAME`
+* `BENCH_PATH`
+* `FRAPPE_BRANCH`
+* selected app list from Step 7
+* the actual site name the user provides now
+
+---
+
+# Step 8: Default Site Setup
+
+## What Step 8 should ask interactively
+
+This is where the user should provide the actual default site details.
+
+### Required prompts
+
+* **Default site name**
+
+  * example: `erp.example.com`
+  * example: `clienta.local`
+* **MariaDB root password**
+
+  * if needed by your flow
+* **Administrator password for the site**
+* **Install ERPNext on this site?**
+
+  * usually yes if `erpnext` was fetched
+* **Set this as the default site?**
+
+  * usually yes
+
+### Optional prompts
+
+* site config email
+* developer mode on/off
+* install demo data or not
+* country / timezone defaults
+* naming series or regional defaults later
+
+---
+
+## Inputs Step 8 should use
+
+```bash
+DEFAULT_SITE_NAME=""
+SITE_ADMIN_PASSWORD=""
+DB_ROOT_PASSWORD=""
+SET_AS_DEFAULT_SITE="yes"
+SELECTED_APPS=""
+```
+
+And from previous steps:
+
+```bash
+BENCH_USER=""
+BENCH_PATH=""
+BENCH_NAME=""
+FINAL_APPS_LIST=""
+MARIADB_ROOT_PASSWORD_SET=""
+```
+
+---
+
+## What Step 8 should cover
+
+## 1. Switch to the real bench context
+
+This step must run as the real bench owner:
+
+```bash
+su - ${BENCH_USER}
+cd ${BENCH_PATH}
+```
+
+Everything here should happen inside the initialized bench.
+
+---
+
+## 2. Create the default site
+
+This is the core command of Step 8.
+
+Typical flow:
+
+```bash
+bench new-site ${DEFAULT_SITE_NAME}
+```
+
+Your script should supply:
+
+* admin password
+* MariaDB root password if required
+
+This is the moment where MariaDB charset/config from Step 5 matters.
+
+### Important
+
+This is the first place where the database for the site is actually created.
+
+---
+
+## 3. Set the created site as the default site
+
+After creating it, set it explicitly:
+
+```bash
+bench use ${DEFAULT_SITE_NAME}
+bench set-default-site ${DEFAULT_SITE_NAME}
+```
+
+Your script should not assume it happened automatically.
+
+This is important because later interactive bench operations should target the default site cleanly.
+
+---
+
+## 4. Install foundation apps on the default site
+
+This is where fetched apps become installed apps.
+
+Your script should install apps in a **safe order**.
+
+### Recommended install order
+
+1. `erpnext` if present
+2. cross-industry business apps
+3. vertical apps
+4. optional custom/community apps last
+
+### Why order matters
+
+Some apps depend on framework/core business structures already existing.
+
+Typical command:
+
+```bash
+bench --site ${DEFAULT_SITE_NAME} install-app <app_name>
+```
+
+### Script behavior
+
+Loop through the resolved app list from Step 7, but:
+
+* skip `frappe` because it is the framework base, not installed as a site app the same way
+* install `erpnext` early if selected
+* install the rest in your chosen sequence
+
+---
+
+## 5. Handle failed app installs safely
+
+If any app install fails, your script should not blindly continue.
+
+Prompt like:
+
+```text
+Failed to install app: triotek-healthcare
+
+1. Retry
+2. Skip and continue
+3. Abort Step 8
+```
+
+Also save failures for review.
+
+---
+
+## 6. Apply first site configs
+
+After site creation and app installation, set the essential configs.
+
+Examples your script may support:
+
+* developer mode on/off
+* maintenance mode off
+* scheduler enabled later
+* host name/domain binding if needed
+* allow CORS only if explicitly required
+
+Typical pattern:
+
+```bash
+bench --site ${DEFAULT_SITE_NAME} set-config key value
+```
+
+At this step, keep configs minimal and safe.
+
+### Good candidates for Step 8
+
+* set site as default
+* disable developer mode in production
+* basic site name/domain config if needed
+
+---
+
+## 7. Run migrate if needed
+
+Depending on app installation sequence, your script should support:
+
+```bash
+bench --site ${DEFAULT_SITE_NAME} migrate
+```
+
+This helps ensure schema and patches are consistent after app installs.
+
+I would make this part of the standard end-of-step flow.
+
+---
+
+## 8. Clear cache and rebuild site state if needed
+
+After installs/migrations:
+
+```bash
+bench --site ${DEFAULT_SITE_NAME} clear-cache
+bench --site ${DEFAULT_SITE_NAME} clear-website-cache
+```
+
+This makes the new site cleaner before production setup.
+
+---
+
+## 9. Verify the site is healthy
+
+Before moving on, verify:
+
+* site directory exists
+* app list is correct
+* migrations completed
+* default site is set
+* basic bench site commands succeed
+
+Checks can include:
+
+```bash
+bench --site ${DEFAULT_SITE_NAME} list-apps
+bench list-sites
+```
+
+And verify the site appears as expected.
+
+---
+
+## 10. Optional first boot verification
+
+Depending on your script design, you may also do a light sanity test such as:
+
+* confirm site config exists
+* confirm database was created
+* confirm installed apps are present
+
+No need to expose it publicly yet; that belongs more to production/HTTPS later.
+
+---
+
+# Recommended install logic inside Step 8
+
+## App install buckets
+
+Your script should separate the resolved Step 7 apps into:
+
+### Foundation
+
+* `frappe`
+* `erpnext`
+
+### Cross-industry
+
+* hrms
+* crm
+* helpdesk
+* etc.
+
+### Vertical
+
+* healthcare
+* education
+* logistics
+* etc.
+
+## Installation rule
+
+* do **not** install `frappe` manually as a site app in this step
+* install `erpnext` first if present
+* then install the selected business apps
+* then install the selected vertical apps
+
+That gives cleaner dependency flow.
+
+---
+
+# What Step 8 should save
+
+```bash
+DEFAULT_SITE_NAME=""
+DEFAULT_SITE_CREATED=""
+DEFAULT_SITE_SET=""
+SITE_ADMIN_PASSWORD_SET=""
+INSTALLED_SITE_APPS=""
+FAILED_SITE_APP_INSTALLS=""
+SITE_MIGRATED=""
+SITE_CACHE_CLEARED=""
+STEP8_COMPLETE=""
+```
+
+---
+
+# What Step 8 should NOT do
+
+This step should still not:
+
+* set up production services
+* generate nginx production config
+* issue HTTPS certificates
+* do final bench jobs/service wiring
+
+Those belong to Steps 9–11.
+
+---
+
+# Recommended Step 8 flow
+
+1. load config from Steps 1–7
+2. ask for default site name
+3. ask for site admin password
+4. run `bench new-site`
+5. set the site as default
+6. install apps in controlled order
+7. handle install failures if any
+8. run migrate
+9. clear caches
+10. verify installed apps and site presence
+11. save state
+
+---
+
+# Suggested end-of-step summary
+
+```text
+Step 8 complete
+
+Default site: erp.example.com
+Site created: yes
+Set as default site: yes
+Installed apps:
+- erpnext
+- triotek-hrms
+- triotek-crm
+- triotek-healthcare
+- triotek-frappe-mpesa-payments
+
+Failed app installs: none
+Migrated: yes
+Cache cleared: yes
+```
+
+---
+
+# Important design note
+
+This is the step where your script should become very deliberate about **site identity**.
+
+So from here onward, all later steps should use:
+
+```bash
+DEFAULT_SITE_NAME
+```
+
+as the primary site target unless the user explicitly chooses another one in Bench Operations.
+
+---
+
+# Final definition of Step 8
+
+Step 8 should cover:
+
+* collecting the actual default site name
+* creating the site
+* setting it as bench default
+* installing selected apps on that site
+* migrating and clearing cache
+* verifying the site is ready for production setup
+

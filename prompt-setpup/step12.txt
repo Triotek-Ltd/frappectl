@@ -1,0 +1,319 @@
+
+---
+
+# Step 12: Finalization, Health Checks, and Backup Automation
+
+## What Step 12 should achieve
+
+By the end of Step 12, your script should have:
+
+* verified the full deployment is healthy
+* verified site, services, and production processes
+* configured automatic local Bench backups
+* configured automatic secondary backup replication
+* configured retention/cleanup rules
+* validated the backup destinations
+* left the system in a maintainable production-ready state
+
+---
+
+## What Step 12 should cover
+
+## 1. Final system health checks
+
+Check:
+
+* MariaDB active
+* Redis active
+* Nginx active
+* Supervisor active if used
+* bench path exists
+* default site exists
+* default site is set
+* installed apps look correct
+* HTTPS is working if enabled
+
+This is the last full validation pass.
+
+---
+
+## 2. Bench health checks
+
+Run checks like:
+
+* bench version
+* bench doctor
+* list sites
+* list installed apps on default site
+* scheduler status
+* worker status
+* pending jobs check
+
+This confirms the bench is not just installed, but operational.
+
+---
+
+## 3. Configure automatic local backups
+
+This is the first backup layer.
+
+### What it should do
+
+* enable scheduled Bench backups
+* choose frequency
+* choose local backup root if needed
+* ensure backup path exists
+* verify backups can be written there
+
+### Ask interactively
+
+* enable automatic backups?
+* frequency?
+
+  * daily
+  * twice daily
+  * custom
+* retention days?
+* include files with backups?
+
+### Result
+
+A scheduled task should run Bench backup regularly for the default site or all sites, depending on your design.
+
+---
+
+## 4. Configure the secondary backup destination
+
+This is the second backup layer.
+
+### Supported modes
+
+* **Google Drive**
+* **Remote storage server**
+* optionally later: S3, mounted NAS, Dropbox, etc.
+
+### Ask interactively
+
+```text
+Secondary backup destination:
+1. Google Drive
+2. Another storage server
+3. Skip secondary backup
+```
+
+---
+
+## 5. If Google Drive is chosen
+
+Your script should prepare for:
+
+* authentication method
+* target folder/path
+* sync command/tool selection
+* validation that the destination is reachable
+
+You do not need to invent the exact sync mechanism yet in the planning stage, but Step 12 must reserve this as a first-class backup mode.
+
+### Ask:
+
+* Google Drive backup folder name/path
+* whether to sync all backups or only latest
+* retention policy on cloud side if you want it later
+
+---
+
+## 6. If another storage server is chosen
+
+Your script should ask for:
+
+* remote host/IP
+* remote username
+* remote path
+* SSH port if custom
+* auth method
+* whether the remote path should be created if missing
+
+### Example concept
+
+* local backup is created first
+* then synced to:
+
+  * `user@backuphost:/path/to/backups`
+
+This is a very solid production pattern.
+
+---
+
+## 7. Backup flow design
+
+The scheduled backup job in Step 12 should do this:
+
+### Backup pipeline
+
+1. run Bench backup locally
+2. verify backup files were created
+3. apply local retention rules
+4. copy/sync to secondary destination
+5. verify sync success
+6. log result
+
+That is the correct architecture.
+
+---
+
+## 8. Retention and cleanup
+
+You need retention on both sides where possible.
+
+### Local retention
+
+Ask:
+
+* how many days to keep?
+* or how many backup sets to keep?
+
+### Secondary retention
+
+Ask optionally:
+
+* mirror local retention?
+* keep all remote backups?
+* prune remote backups too?
+
+At minimum, local retention must exist so the server disk does not fill up.
+
+---
+
+## 9. Backup verification
+
+This is important.
+
+Your script should verify after setup:
+
+* local backup path exists
+* at least one test backup can be created
+* secondary destination is reachable
+* sync command succeeds
+* backup file is non-empty
+
+Without verification, backup setup is only assumed, not trusted.
+
+---
+
+## 10. Logging and alert state
+
+Step 12 should also prepare:
+
+* backup log file
+* final health-check log
+* status markers in your config/state file
+
+That way Step 11 can later show:
+
+* last backup time
+* last sync status
+* last health check result
+
+---
+
+# What Step 12 should ask interactively
+
+## Required
+
+* enable auto backup?
+* local backup frequency?
+* local retention?
+* secondary backup destination type?
+* if remote server: host, user, path
+* if Google Drive: target folder/path
+
+## Optional
+
+* backup all sites or default site only?
+* run test backup now?
+* run test sync now?
+* prune remote backups automatically?
+
+---
+
+# What Step 12 should save
+
+```bash
+FINAL_HEALTH_CHECK_DONE=""
+FINAL_HEALTH_STATUS=""
+
+AUTO_BACKUP_ENABLED=""
+AUTO_BACKUP_SCOPE=""
+AUTO_BACKUP_FREQUENCY=""
+AUTO_BACKUP_RETENTION_DAYS=""
+LOCAL_BACKUP_ROOT=""
+
+SECONDARY_BACKUP_ENABLED=""
+SECONDARY_BACKUP_TYPE=""
+SECONDARY_BACKUP_TARGET=""
+SECONDARY_BACKUP_PATH=""
+SECONDARY_BACKUP_STATUS=""
+
+TEST_BACKUP_RUN=""
+TEST_BACKUP_SUCCESS=""
+TEST_SYNC_RUN=""
+TEST_SYNC_SUCCESS=""
+```
+
+---
+
+# Recommended Step 12 flow
+
+1. load config from Steps 1–11
+2. run final service and bench health checks
+3. confirm default site and production stack health
+4. ask whether to enable automatic local backups
+5. configure backup schedule
+6. configure local retention
+7. ask for secondary backup mode
+8. configure Google Drive or remote storage target
+9. run test local backup
+10. run test secondary sync
+11. save final deployment state
+12. print final readiness summary
+
+---
+
+# Suggested end-of-step summary
+
+```text
+Step 12 complete
+
+Final health check: passed
+Default site: erp.example.com
+Bench status: healthy
+MariaDB: active
+Redis: active
+Nginx: active
+Supervisor: active
+
+Auto local backups: enabled
+Backup frequency: daily
+Local retention: 14 days
+Local backup root: /opt/frappe-backups
+
+Secondary backup: enabled
+Secondary type: remote server
+Secondary target: backup@example-storage:/srv/backups/erp
+
+Test local backup: success
+Test secondary sync: success
+Deployment status: production ready
+```
+
+# Locked update
+
+So yes, we now officially place this in:
+
+## Step 12
+
+* finalization
+* health checks
+* local automatic Bench backup
+* secondary off-server/cloud backup
+

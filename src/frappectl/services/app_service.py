@@ -1,7 +1,7 @@
 from pathlib import Path
 import typer
 
-from frappectl.catalog import AppSelection, resolve_apps, installable_site_apps
+from frappectl.catalog import AppSelection, resolve_apps, resolve_all_apps, installable_site_apps
 from frappectl.core import load_config, save_config
 from frappectl.integrations import bench
 from frappectl.setup.step_helpers import require_root_privileges
@@ -26,7 +26,7 @@ def resolve_app_plan_for_bench(bench_name: str):
 
 def prepare_app_fetch(bench_name: str) -> dict[str, str]:
     require_root_privileges("App fetch")
-    plan = resolve_app_plan_for_bench(bench_name)
+    plan = resolve_all_apps()
 
     final_apps = ",".join(app.name for app in plan.all_apps)
     final_app_branches = ",".join(
@@ -52,6 +52,7 @@ def prepare_app_fetch(bench_name: str) -> dict[str, str]:
         bench.get_app(repo=repo, branch=app.branch, cwd=bench_path, user=bench_user)
         fetched_apps.append(app.name)
 
+    config["FETCH_APPS_MODE"] = "all"
     config["FINAL_APPS_LIST"] = final_apps
     config["FINAL_APP_BRANCHES"] = final_app_branches
     config["FETCHED_APPS"] = ",".join(fetched_apps)
@@ -61,6 +62,13 @@ def prepare_app_fetch(bench_name: str) -> dict[str, str]:
 
 
 def prepare_site_install_apps(bench_name: str) -> dict[str, str]:
+    selection_config = load_config(bench_name)
+    if not selection_config.get("SELECTED_INDUSTRY") and not selection_config.get("SELECTED_BUSINESS_MODULES"):
+        raise ValueError(
+            "Site app installation requires app selection first. "
+            "Choose the industry and business modules during site setup."
+        )
+
     plan = resolve_app_plan_for_bench(bench_name)
     site_apps = installable_site_apps(plan)
 

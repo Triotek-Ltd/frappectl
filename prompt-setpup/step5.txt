@@ -1,0 +1,355 @@
+install packages
+install MariaDB
+configure MariaDB charset + engine settings
+restart MariaDB
+enable & start MariaDB
+install Redis
+enable & start Redis
+install Node + Yarn
+install Nginx
+enable & start Nginx
+install supervisor
+enable & start supervisor
+install wkhtmltopdf
+verify all services
+
+
+# Step 5: Install Dependencies
+
+## What Step 5 should achieve
+
+By the end of Step 5, your script should have installed and prepared the host-level dependencies required before Bench init and site creation, including:
+
+* Git and build tools
+* Python runtime and dev packages
+* MariaDB server and client/dev packages
+* Redis server
+* Node.js and Yarn
+* Nginx
+* supervisor or systemd-related service support
+* wkhtmltopdf prerequisites or package
+* required SSL/ffi/image/font libraries
+* configured and enabled the system services that should already be running
+
+Frappe’s installation docs identify Python, Redis, MariaDB, Node.js, Yarn, and wkhtmltopdf as core prerequisites, and the Bench install flow assumes those already exist before you initialize the bench. ([Frappe Docs][1])
+
+---
+
+# What Step 5 should cover
+
+## 1. Refresh apt and install base build/runtime tools
+
+This should install the generic packages needed for compiling Python wheels, using Git, and working with repos.
+
+Typical group:
+
+* `git`
+* `curl`
+* `wget`
+* `build-essential`
+* `gcc`
+* `g++`
+* `make`
+* `pkg-config`
+* `software-properties-common`
+* `ca-certificates`
+* `apt-transport-https` if your distro still needs it
+* `gnupg`
+* `lsb-release`
+
+These are not “Bench packages” but they are part of making the machine able to install the rest reliably.
+
+---
+
+## 2. Install Python and Python development packages
+
+Bench and Frappe need Python plus development headers and packaging tools.
+
+Typical group:
+
+* `python3`
+* `python3-dev`
+* `python3-venv`
+* `python3-pip`
+* `python3-setuptools`
+* `python3-wheel`
+* `python3-distutils` where needed
+* `libffi-dev`
+* `libssl-dev`
+
+The docs for Frappe installation call out Python 3.10+ in the v14 docs, while the current installation page also states that Bench init later sets up a Python virtual environment. ([Frappe Docs][2])
+
+### Interactive items
+
+Ask only if needed:
+
+* use default system Python?
+* specify custom Python binary from Step 1?
+
+---
+
+## 3. Install MariaDB and database support packages
+
+This is one of the most important dependency groups.
+
+Typical group:
+
+* `mariadb-server`
+* `mariadb-client`
+* `libmariadb-dev`
+* possibly `libmysqlclient-dev` equivalent where appropriate
+
+The current Frappe install docs explicitly list installing MariaDB server/client and MariaDB dev packages on Debian/Ubuntu. ([Frappe Docs][1])
+
+### What your script should do here
+
+* install MariaDB packages
+* enable and start MariaDB
+* run secure setup if needed
+* save whether DB root password was configured
+* later steps can create sites using DB credentials
+
+### Also prepare MariaDB config
+
+You should include the Frappe-required UTF8MB4 settings in MariaDB config, because Frappe docs require `utf8mb4` server configuration for proper character support. The v14 installation docs explicitly show `character-set-server = utf8mb4` and `collation-server = utf8mb4_unicode_ci`. ([Frappe Docs][2])
+
+---
+
+## 4. Install Redis
+
+Redis is used for caching, queues, and realtime support in Frappe.
+
+Typical package:
+
+* `redis-server`
+
+Frappe installation docs list Redis among the required services. ([Frappe Docs][1])
+
+### What your script should do
+
+* install Redis
+* enable and start Redis
+* confirm service is active
+* keep Redis bound locally unless you have a special reason otherwise
+
+---
+
+## 5. Install Node.js and Yarn
+
+These are needed for frontend assets and JS dependencies.
+
+Typical group:
+
+* `nodejs`
+* `npm` if needed by your install path
+* `yarn`
+
+The Frappe installation docs identify Node.js and Yarn as prerequisites, and `bench init` later installs Node dependencies within the bench. ([Frappe Docs][2])
+
+### Important design choice
+
+You should script this carefully because Node version mismatches often cause install pain. Since version support varies by Frappe release, your script should tie Node selection to the chosen Frappe branch/profile rather than hardcoding blindly. The v14 installation docs mention Node.js 16 specifically for that version. ([Frappe Docs][2])
+
+So Step 5 should include:
+
+* derive recommended Node version from chosen `FRAPPE_BRANCH`
+* install that version
+* install Yarn
+* verify `node -v`, `npm -v`, `yarn -v`
+
+---
+
+## 6. Install Nginx
+
+Nginx belongs here as a host dependency.
+
+Typical package:
+
+* `nginx`
+
+This answers your earlier question directly:
+
+* **Nginx gets installed in Step 5 by your script**
+* later, Bench can generate/configure its production Nginx config in Step 9
+
+Bench production setup relies on Nginx being present when configuring the production stack. ([Mintlify][3])
+
+### What Step 5 should do
+
+* install Nginx
+* enable it
+* do not fully expose the site config yet
+* keep default config minimal until production step
+
+---
+
+## 7. Install supervisor or service-management support
+
+Depending on your chosen production mode, you may need:
+
+* `supervisor`
+* or systemd-only service handling if your script leans that way
+
+Bench production flows often interact with supervisor-managed services, and documented update flows mention restarting supervisor when configured. ([Mintlify][3])
+
+So Step 5 should:
+
+* install `supervisor` if your production path uses it
+* enable the service
+* verify it is present for Step 9
+
+---
+
+## 8. Install wkhtmltopdf and its dependencies
+
+Frappe uses wkhtmltopdf for PDF generation.
+
+The official install docs call out wkhtmltopdf and also mention `xvfb` and `libfontconfig` in the current Debian/Ubuntu installation guidance. The older docs specify wkhtmltopdf `0.12.5` with patched Qt as the expected PDF generator. ([Frappe Docs][1])
+
+### What Step 5 should do
+
+* install wkhtmltopdf if your chosen OS/release has a working package
+* otherwise install required support packages and flag manual package source handling if needed
+* verify `wkhtmltopdf --version`
+
+Because this area can be distro-sensitive, your script should validate the result instead of assuming success.
+
+---
+
+## 9. Install supporting libraries often needed by Frappe builds
+
+These can prevent later pip/build issues.
+
+Useful packages often include:
+
+* `libjpeg-dev`
+* `zlib1g-dev`
+* `liblcms2-dev`
+* `libwebp-dev`
+* `libffi-dev`
+* `libssl-dev`
+* `xvfb`
+* `libfontconfig`
+* fonts packages as needed
+
+The exact minimal set can vary, but supporting SSL, ffi, and font/PDF libraries is part of a smoother install path, and the Frappe docs explicitly include at least `xvfb` and `libfontconfig` for wkhtmltopdf support. ([Frappe Docs][1])
+
+---
+
+## 10. Enable and verify services
+
+By the end of Step 5, your script should verify:
+
+* MariaDB is active
+* Redis is active
+* Nginx is installed and active
+* supervisor is active if installed
+
+This is important because later steps should not discover missing service state for the first time.
+
+---
+
+# What Step 5 should ask interactively
+
+## Required or semi-required prompts
+
+* confirm OS package install begins now?
+* use system Python or custom Python from Step 1?
+* install supervisor for production mode?
+* if MariaDB root password is not already configured, set one now?
+* if Node version depends on selected Frappe branch, confirm detected version?
+
+## Optional prompts
+
+* install wkhtmltopdf automatically if package is available?
+* use default distro Node or provider repo for Node?
+* install Nginx now even in development mode?
+
+For your design, I’d still install Nginx here in both modes so production setup later is smoother.
+
+---
+
+# What Step 5 should save
+
+```bash
+PYTHON_INSTALLED=""
+PYTHON_VERSION=""
+MARIADB_INSTALLED=""
+MARIADB_SECURED=""
+MARIADB_ROOT_PASSWORD_SET=""
+REDIS_INSTALLED=""
+NODE_INSTALLED=""
+NODE_VERSION=""
+YARN_INSTALLED=""
+NGINX_INSTALLED=""
+SUPERVISOR_INSTALLED=""
+WKHTMLTOPDF_INSTALLED=""
+WKHTMLTOPDF_VERSION=""
+DEPENDENCIES_READY=""
+```
+
+---
+
+# What Step 5 should NOT do
+
+This step should still not:
+
+* install Bench CLI itself
+* run `bench init`
+* fetch apps
+* create a site
+* run production setup
+* enable HTTPS
+
+Those belong to later steps.
+
+---
+
+# Recommended Step 5 flow
+
+1. load config from Steps 1–4
+2. install base build/runtime packages
+3. install Python packages and validate Python
+4. install MariaDB and configure UTF8MB4 settings
+5. install Redis and enable it
+6. install Node.js and Yarn based on selected Frappe branch
+7. install Nginx
+8. install supervisor if production mode requires it
+9. install wkhtmltopdf and validate
+10. verify all service/package states
+11. save readiness flags
+
+---
+
+# Suggested end-of-step summary
+
+```text
+Step 5 complete
+
+Python: installed (3.x)
+MariaDB: installed and active
+Redis: installed and active
+Node.js: installed (vX)
+Yarn: installed
+Nginx: installed and active
+Supervisor: installed and active
+wkhtmltopdf: installed (version X)
+Dependencies ready: yes
+```
+
+# Final definition of Step 5
+
+Step 5 should cover:
+
+* all host-level Frappe/Bench prerequisites
+* installation of services like MariaDB, Redis, Nginx
+* installation of runtimes like Python, Node, Yarn
+* installation/validation of wkhtmltopdf
+* enabling and checking service readiness
+* saving dependency state for the actual Bench install in Step 6
+
+
+
+[1]: https://docs.frappe.io/framework/user/en/installation?utm_source=chatgpt.com "Installation - Documentation for Frappe Apps"
+[2]: https://docs.frappe.io/framework/v14/user/en/installation?utm_source=chatgpt.com "Installation - Documentation for Frappe Apps"
+[3]: https://mintlify.com/frappe/frappe/installation?utm_source=chatgpt.com "Installation - Frappe Framework"

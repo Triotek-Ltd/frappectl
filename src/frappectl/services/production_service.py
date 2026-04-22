@@ -12,7 +12,7 @@ from frappectl.setup.step_helpers import (
 def prepare_production(bench_name: str) -> dict[str, str]:
     require_root_privileges("Production setup")
     config = load_config(bench_name)
-    deploy_mode = config.get("DEPLOY_MODE", "development")
+    deploy_mode = config.get("DEPLOY_MODE", "production")
     bench_path = config.get("BENCH_PATH", "").strip()
     bench_user = config.get("BENCH_USER", "").strip()
     default_site = config.get("DEFAULT_SITE_NAME", "").strip()

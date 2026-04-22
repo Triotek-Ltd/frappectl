@@ -37,6 +37,26 @@ def resolve_apps(selection: AppSelection, catalog_path: str | None = None) -> Ap
     )
 
 
+def resolve_all_apps(catalog_path: str | None = None) -> AppPlan:
+    catalog = load_catalog(catalog_path)
+
+    foundation = parse_app_list(catalog.get("foundation", []))
+
+    business_apps: list[AppDefinition] = []
+    for app_list in catalog.get("business", {}).values():
+        business_apps.extend(parse_app_list(app_list))
+
+    vertical_apps: list[AppDefinition] = []
+    for app_list in catalog.get("verticals", {}).values():
+        vertical_apps.extend(parse_app_list(app_list))
+
+    return AppPlan(
+        foundation=_dedupe_apps(foundation),
+        business=_dedupe_apps(business_apps),
+        vertical=_dedupe_apps(vertical_apps),
+    )
+
+
 def installable_site_apps(plan: AppPlan) -> list[AppDefinition]:
     apps = [app for app in plan.all_apps if app.name != "frappe"]
 

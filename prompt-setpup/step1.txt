@@ -1,0 +1,221 @@
+
+# Step 1: System Preparation
+
+## What Step 1 should achieve
+
+By the end of Step 1, your script should have:
+
+* confirmed the server is a supported Linux target
+* updated the base system
+* set core machine identity values
+* collected the **bench owner user**
+* collected the **bench name**
+* collected the **deployment mode** such as development or production
+* saved these values for the later steps
+
+Frappe’s installation docs officially support Debian/Ubuntu among Linux distributions, and the Bench docs show that a bench is created later with `bench init [bench-name]`. ([Frappe Docs][2])
+
+## What Step 1 should ask the user interactively
+
+This is where your script should prompt for the values that shape the rest of the install.
+
+### Required prompts
+
+* **Bench owner username**
+  Example: `frappe`, `triotek`, `deploy`
+
+* **Bench name**
+  Example: `triotek-bench`, `client-a-bench`, `erp-bench`
+
+* **Deployment mode**
+  Example:
+
+  * Development
+  * Production
+
+* **Server timezone**
+  Example: `Africa/Nairobi`
+
+* **Hostname**
+  Example: `erp1.example.com`
+
+### Optional prompts
+
+* **Python executable preference**
+  Bench init supports a `--python` option, so if you want version control in your script, capture it here. ([Frappe Docs][3])
+
+* **Frappe branch target**
+  If you want later steps to run `bench init` with a chosen Frappe branch, this is the right place to collect it because Bench supports a `--frappe-branch` option on init. ([Frappe Docs][3])
+
+* **Apps manifest path or install profile**
+  Bench init also supports `--apps_path`, so if your script later uses an apps JSON/YAML profile, that value can be prepared now. ([Frappe Docs][3])
+
+## What Step 1 should do automatically
+
+After collecting inputs, Step 1 should handle the basic machine prep.
+
+### System checks
+
+* verify the script is running on Linux
+* verify the distro is Ubuntu/Debian if you want to stay inside the officially supported path
+* verify internet access
+* verify enough disk and memory for the planned install
+
+The official installation guide says the supported OS path is Unix-like systems, with Debian/Ubuntu officially supported. ([Frappe Docs][2])
+
+### Base package refresh
+
+* run package index update
+* run base upgrade
+* optionally install a minimal base tool set like curl, wget, git, sudo, ca-certificates
+
+### Machine identity setup
+
+* set timezone
+* set hostname
+* update `/etc/hosts` if your script manages local hostname resolution
+
+### Script state setup
+
+* write all collected values into a config file such as:
+
+  * `/etc/triotek-frappe.env`
+  * or `.env`
+  * or `install-config.json`
+
+That way every later step can reuse the same values without asking again.
+
+## What Step 1 should save as variables
+
+These are the variables I’d lock now:
+
+```bash
+BENCH_OWNER=""
+BENCH_NAME=""
+DEPLOY_MODE=""
+SERVER_TIMEZONE=""
+SERVER_HOSTNAME=""
+PYTHON_BIN=""
+FRAPPE_BRANCH=""
+APPS_PROFILE=""
+```
+
+These matter because later Bench setup will need at least:
+
+* the user who owns the bench files
+* the bench directory name
+* possibly the Python path
+* possibly the Frappe branch for `bench init` ([Frappe Docs][3])
+
+## What Step 1 should NOT do
+
+To keep your script clean, Step 1 should **not** yet:
+
+* create the bench
+* install Bench CLI
+* fetch apps
+* create a site
+* run production setup
+
+Those belong to later steps. The Bench docs separate creating a bench with `bench init`, adding a site with `bench new-site`, and production configuration with `bench setup production`. ([Frappe Docs][4])
+
+## Recommended Step 1 flow in plain English
+
+Your script’s Step 1 can read like this:
+
+1. detect OS
+2. update system packages
+3. ask for bench owner username
+4. ask for bench name
+5. ask for deployment mode
+6. ask for timezone
+7. ask for hostname
+8. ask for optional Python path and Frappe branch
+9. validate all values
+10. save them to config for later steps
+
+## Good validation rules
+
+Use simple checks now so later steps do not break.
+
+### Bench owner username
+
+* lowercase only
+* allow letters, numbers, hyphen
+* must not already conflict with a reserved account unless explicitly allowed
+
+### Bench name
+
+* lowercase
+* no spaces
+* safe for use as a directory name
+* should probably end with `-bench`
+
+Since Bench init creates the bench directory using the provided bench name, treating it as a filesystem-safe value is important. ([Frappe Docs][4])
+
+### Deployment mode
+
+Allow only:
+
+* `development`
+* `production`
+
+### Timezone
+
+* validate against `timedatectl list-timezones`
+
+### Hostname
+
+* validate as a safe hostname/FQDN
+* no spaces or underscores
+
+## Suggested output of Step 1
+
+At the end, show a summary like:
+
+```text
+Step 1 complete
+
+Bench owner: triotek
+Bench name: triotek-bench
+Mode: production
+Timezone: Africa/Nairobi
+Hostname: erp1.example.com
+Python: /usr/bin/python3
+Frappe branch: version-16
+```
+
+## Best design choice for your script
+
+Make Step 1 produce a reusable config file, for example:
+
+```bash
+BENCH_OWNER="triotek"
+BENCH_NAME="triotek-bench"
+DEPLOY_MODE="production"
+SERVER_TIMEZONE="Africa/Nairobi"
+SERVER_HOSTNAME="erp1.example.com"
+PYTHON_BIN="/usr/bin/python3"
+FRAPPE_BRANCH="version-16"
+```
+
+Then every later step can just `source` that file.
+
+## Final definition of Step 1
+
+So Step 1 should cover:
+
+* server identity setup
+* base OS refresh
+* interactive collection and making of bench owner and bench name
+* deployment mode selection
+* timezone and hostname setup
+* validation
+* saving all values for later steps
+
+That gives you the clean base the rest of the script depends on.
+
+[1]: https://docs.frappe.io/framework/user/en/bench?utm_source=chatgpt.com "Bench - Documentation for Frappe Apps"
+[2]: https://docs.frappe.io/framework/user/en/installation?utm_source=chatgpt.com "Installation - Documentation for Frappe Apps"
+[3]: https://docs.frappe.io/framework/user/en/bench/resources/bench-commands-cheatsheet?utm_source=chatgpt.com "Bench Commands Cheatsheet - Documentation for Frappe Apps"
+[4]: https://docs.frappe.io/framework/user/en/bench/bench-commands?utm_source=chatgpt.com "Bench Commands - Documentation for Frappe Apps"

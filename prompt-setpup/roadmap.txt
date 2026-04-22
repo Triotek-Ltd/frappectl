@@ -1,0 +1,322 @@
+
+# Roadmap
+
+## Phase 0 — Lock the product shape
+
+Goal: agree on what this tool is before coding.
+
+Deliverables:
+
+* final CLI name
+* repo name
+* command philosophy:
+
+  * guided setup flow
+  * direct ops commands
+  * optional interactive menu
+* multi-bench model
+* install model:
+
+  * repo on Git
+  * installer script
+  * installer installs CLI
+* supported environment:
+
+  * Ubuntu/Debian first
+
+Why first:
+Your setup docs already assume saved state, bench identity, deployment mode, and Linux-targeted flows, so we should freeze those assumptions before implementation. 
+
+## Phase 1 — CLI specification
+
+Goal: define the CLI before writing code.
+
+Deliverables:
+
+* full command tree
+* top-level groups
+* command arguments/options
+* global options like:
+
+  * `--bench`
+  * `--site`
+  * `--yes`
+  * `--non-interactive`
+  * `--verbose`
+* command behavior rules:
+
+  * interactive if values missing
+  * non-interactive if all flags supplied
+* destructive action policy:
+
+  * confirm reinstall
+  * confirm drop
+  * confirm restore
+  * confirm force restart
+
+This phase should cover both:
+
+* setup commands
+* operations commands
+
+This matches your menu tree and setup steps.  
+
+## Phase 2 — Data and state model
+
+Goal: define how the tool stores bench info and progress.
+
+Deliverables:
+
+* bench registry design
+* active bench context design
+* per-bench config format
+* per-bench state/progress format
+* logging format
+* error/report format
+
+Recommended files:
+
+* `/etc/frappe-installer/benches.json`
+* `/etc/frappe-installer/benches/<bench>.env`
+* `/etc/frappe-installer/state/<bench>.json`
+* `/var/log/frappe-installer/...`
+
+Why this matters:
+Your steps depend on saved values like `BENCH_USER`, `BENCH_NAME`, `DEPLOY_MODE`, `BENCH_PATH`, `FRAPPE_BRANCH`, and selected apps.  
+
+## Phase 3 — Repo skeleton and packaging
+
+Goal: create the Python project correctly from day one.
+
+Deliverables:
+
+* repo structure
+* `pyproject.toml`
+* Python package layout
+* CLI entry point
+* command module layout
+* shell installer script path
+* README starter
+
+Suggested outcome:
+
+* package install gives `frappectl` command
+* repo is ready for Git push
+* later installer can do `pip install git+...`
+
+## Phase 4 — Core framework implementation
+
+Goal: build the foundations every command will use.
+
+Deliverables:
+
+* command runner for shell/subprocess
+* root/user execution helpers
+* bench context resolver
+* registry manager
+* config reader/writer
+* state manager
+* prompt helpers
+* validators
+* confirmation helpers
+* logging
+
+This is where we implement the reusable helpers your design already implies, such as selecting bench/site/app, confirming dangerous actions, and using saved state. 
+
+## Phase 5 — Bench-aware CLI foundation
+
+Goal: make multi-bench support real before setup logic grows.
+
+Deliverables:
+
+* `bench list`
+* `bench use`
+* `bench info`
+* `bench register`
+* `bench remove` or `bench archive`
+* global `--bench` resolution
+
+Why early:
+If this comes late, all commands will accidentally assume one bench.
+
+## Phase 6 — Setup workflow scaffold
+
+Goal: implement the setup engine before filling in each step.
+
+Deliverables:
+
+* `setup new`
+* `setup run`
+* `setup resume`
+* `setup step <n>`
+* `setup status`
+* step dispatcher
+* step completion tracking
+* failure/retry handling
+
+This phase is mostly orchestration, not the full system logic yet.
+
+## Phase 7 — Implement setup steps in batches
+
+Goal: build the setup flow incrementally.
+
+Recommended batch order:
+
+### Batch A: Steps 1–2
+
+* system preparation
+* config capture
+* path derivation
+* conflict detection
+* layout prep
+
+These are the setup base and define real paths like `/home/${BENCH_USER}/${BENCH_NAME}`.  
+
+### Batch B: Steps 3–5
+
+* security hardening
+* bench user env
+* host dependencies
+
+These prepare the machine and user before Bench install.   
+
+### Batch C: Steps 6–8
+
+* Bench CLI install
+* bench init
+* app resolution/fetch
+* site creation
+* default site setup
+
+This is where the actual Frappe bench and site start existing.   
+
+### Batch D: Steps 9–10
+
+* production wiring
+* Nginx/Supervisor integration
+* HTTPS setup
+
+These are distinct phases in your docs and should stay separate in code too.  
+
+### Batch E: Steps 11–12
+
+* ops menu
+* diagnostics
+* backups
+* final health checks
+* automation
+
+This makes the tool usable long-term, not just for initial setup.  
+
+## Phase 8 — Operations commands
+
+Goal: implement direct commands outside the setup wizard.
+
+Deliverables:
+
+* bench commands
+* apps commands
+* site commands
+* backup commands
+* update commands
+* jobs commands
+* production commands
+* ssl commands
+* diagnostics commands
+
+These should map to the menu tree, but be usable directly from CLI too. 
+
+## Phase 9 — Apps catalog and resolution engine
+
+Goal: make app selection smart and reusable.
+
+Deliverables:
+
+* app catalog file
+* foundation/business/vertical grouping
+* selection resolver
+* install order logic
+* branch resolution logic
+* repo URL mapping
+
+Your current grouping already gives the basis:
+
+* foundation apps
+* common business apps
+* industry verticals. 
+
+## Phase 10 — Installer and Git distribution
+
+Goal: make the project installable from Git.
+
+Deliverables:
+
+* `scripts/install.sh`
+* install docs
+* pip install from Git workflow
+* post-install check
+* ensure `frappectl --help` works after install
+
+This is the part that makes the CLI available from the repo, exactly as you described.
+
+## Phase 11 — Testing and hardening
+
+Goal: prevent breakage and unsafe behavior.
+
+Deliverables:
+
+* unit tests for:
+
+  * registry
+  * config
+  * context
+  * validators
+* integration tests for:
+
+  * command resolution
+  * dry-run behavior
+  * generated command plans
+* safe command execution checks
+* idempotency checks
+* rollback/recovery behavior where possible
+
+## Phase 12 — Documentation
+
+Goal: make the tool usable by others.
+
+Deliverables:
+
+* install guide
+* quick start
+* multi-bench guide
+* setup flow guide
+* ops command reference
+* recovery/troubleshooting guide
+* example workflows
+
+---
+
+# Recommended build order
+
+This is the exact order I’d follow:
+
+1. Phase 0 — lock product decisions
+2. Phase 1 — CLI spec
+3. Phase 2 — state model
+4. Phase 3 — repo skeleton
+5. Phase 4 — core framework
+6. Phase 5 — multi-bench foundation
+7. Phase 6 — setup engine scaffold
+8. Phase 7 Batch A
+9. Phase 7 Batch B
+10. Phase 7 Batch C
+11. Phase 9 — app resolver
+12. Phase 8 — direct ops commands
+13. Phase 7 Batch D
+14. Phase 7 Batch E
+15. Phase 10 — Git installer
+16. Phase 11 — tests
+17. Phase 12 — docs
+
+---
+

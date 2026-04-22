@@ -12,7 +12,7 @@ def run(bench_name: str) -> None:
     require_root_privileges("Dependency installation")
     ensure_step_support_directories()
     config = load_config(bench_name)
-    deploy_mode = config.get("DEPLOY_MODE", "development")
+    deploy_mode = config.get("DEPLOY_MODE", "production")
     frappe_branch = config.get("FRAPPE_BRANCH", "version-16")
 
     node_major = "18"

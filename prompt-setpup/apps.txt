@@ -1,0 +1,103 @@
+
+
+### 1. Foundation apps
+
+These should be fetched by default for every deployment profile.
+
+* **frappe**
+* **erpnext** ([GitHub][1])
+
+### 2. Cross-industry business apps
+
+These are common business modules that can be added across many client types.
+
+#### Core operations
+
+* triotek-hrms
+* triotek-crm
+* triotek-helpdesk
+
+#### Productivity & collaboration
+
+* triotek-wiki
+* triotek-mail
+* triotek-gameplan
+
+#### Data & insights
+
+* triotek-insights
+
+#### Customization & experience
+
+* triotek-print-designer
+* triotek-builder
+
+#### Payments
+
+* triotek-frappe-mpesa-payments
+* **payments** ([GitHub][2])
+
+### 3. Industry verticals
+
+#### Finance / financial services
+
+* triotek-lending
+* triotek-frappe-mpesa-payments
+* payments
+
+#### Education / training
+
+* triotek-education
+* triotek-lms
+* **library_management** ([GitHub][3])
+
+#### Retail / commerce
+
+* triotek-webshop
+* triotek-posawesome
+
+#### Healthcare
+
+* triotek-healthcare
+
+#### Utilities / telecom
+
+* triotek-utility-billing
+* triotek-telecom-base
+
+#### Agriculture / livestock
+
+* triotek-agriculture
+* triotek-livestock-base
+
+#### Nonprofit / public sector
+
+* triotek-non-profit
+* triotek-public-procurement-base
+
+#### Hospitality / food
+
+* triotek-hospitality-base
+* triotek-restaurant-base
+
+#### Property / construction / field services
+
+* triotek-property-management-base
+* triotek-construction-base
+* triotek-services-base
+
+#### Logistics / transport
+
+* triotek-logistics-base
+* triotek-vehicle-trading-base
+* triotek-aviation-base
+
+#### Manufacturing / industrial
+
+* triotek-manufacturing-base
+
+
+
+[1]: https://github.com/frappe/frappe?utm_source=chatgpt.com "Frappe Framework"
+[2]: https://github.com/frappe/payments?utm_source=chatgpt.com "A payments app for frappe"
+[3]: https://github.com/frappe/library_management?utm_source=chatgpt.com "frappe/library_management: Library Management App"

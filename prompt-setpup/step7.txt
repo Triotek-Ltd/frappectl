@@ -1,0 +1,373 @@
+
+---
+
+# 🎯 What Step 7 should achieve
+
+By the end of Step 7:
+
+* all required apps are cloned into:
+
+  ```bash
+  ${BENCH_PATH}/apps/
+  ```
+* apps match:
+
+  * selected industry
+  * selected business modules
+  * required foundation apps
+* correct branches are used
+* repo access (public/private) works
+
+---
+
+# 🧠 Core concept of Step 7
+
+Your script should:
+
+```text
+SELECT → RESOLVE → FETCH
+```
+
+### SELECT
+
+User chooses:
+
+* industry
+* optional business modules
+
+### RESOLVE
+
+Script determines:
+
+* foundation apps (always included)
+* cross-industry apps (selected or default)
+* vertical apps (based on industry)
+
+### FETCH
+
+Script runs:
+
+```bash
+bench get-app <repo>
+```
+
+---
+
+# 🧩 What Step 7 should cover
+
+## 1. Load app configuration (VERY IMPORTANT)
+
+This is where your JSON/YAML comes in (from earlier).
+
+Example structure:
+
+```json
+{
+  "foundation": ["frappe", "erpnext"],
+  "business": {
+    "hr": ["triotek-hrms"],
+    "crm": ["triotek-crm"]
+  },
+  "verticals": {
+    "healthcare": ["triotek-healthcare"],
+    "education": ["triotek-education", "triotek-lms"]
+  }
+}
+```
+
+---
+
+## 2. Ask user for app selection
+
+### Prompt 1: Industry
+
+```text
+Select industry:
+1. Retail
+2. Healthcare
+3. Education
+4. Manufacturing
+5. Agriculture
+...
+```
+
+---
+
+### Prompt 2: Business modules
+
+```text
+Select business modules:
+[✓] HR
+[✓] CRM
+[ ] Helpdesk
+[✓] Payments
+[ ] Insights
+```
+
+---
+
+## 3. Resolve final app list
+
+Combine:
+
+```text
+FINAL_APPS =
+  foundation
++ selected business apps
++ selected vertical apps
+```
+
+---
+
+### Example result
+
+```bash
+frappe
+erpnext
+triotek-hrms
+triotek-crm
+triotek-healthcare
+triotek-frappe-mpesa-payments
+```
+
+---
+
+## 4. Map apps to repo URLs
+
+From your uploaded config 
+
+Each app has:
+
+* name
+* upstream_url
+* branch_candidates
+
+Example:
+
+```json
+{
+  "name": "triotek-hrms",
+  "upstream_url": "https://github.com/frappe/hrms.git"
+}
+```
+
+---
+
+## 5. Handle branch selection
+
+Your script should:
+
+### Option A (simple)
+
+Use:
+
+```bash
+--branch ${FRAPPE_BRANCH}
+```
+
+---
+
+### Option B (smart)
+
+Check available branches:
+
+```text
+version-16-hotfix
+version-16
+main
+develop
+```
+
+Pick first match.
+
+---
+
+## 6. Fetch apps
+
+Run:
+
+```bash
+bench get-app <app-name> <repo-url> --branch <branch>
+```
+
+---
+
+### Example
+
+```bash
+bench get-app triotek-hrms https://github.com/frappe/hrms.git --branch version-16
+```
+
+---
+
+## 🔁 Loop through all apps
+
+```bash
+for app in FINAL_APPS; do
+  bench get-app ...
+done
+```
+
+---
+
+## 7. Handle private repos
+
+If Step 4 enabled Git SSH:
+
+* use SSH URLs:
+
+  ```bash
+  git@github.com:org/repo.git
+  ```
+
+If not:
+
+* use HTTPS
+
+---
+
+## 8. Handle failures (VERY IMPORTANT)
+
+If any app fails:
+
+Prompt:
+
+```text
+Failed to fetch triotek-healthcare
+
+1. Retry
+2. Skip
+3. Abort
+```
+
+---
+
+## 9. Verify apps fetched
+
+Check:
+
+```bash
+ls ${BENCH_PATH}/apps/
+```
+
+or:
+
+```bash
+bench version
+```
+
+---
+
+# 🧠 What Step 7 should ask
+
+### Required
+
+* industry selection
+* business module selection
+
+---
+
+### Optional
+
+* install all business apps? (quick mode)
+* install all vertical apps? (debug/dev mode)
+* custom apps path?
+
+---
+
+# 💾 What Step 7 should save
+
+```bash
+SELECTED_INDUSTRY=""
+SELECTED_BUSINESS_MODULES=""
+FINAL_APPS_LIST=""
+APPS_FETCHED=""
+FAILED_APPS=""
+```
+
+---
+
+# ⚠️ What Step 7 should NOT do
+
+Do NOT:
+
+* install apps on site → Step 8
+* create site → Step 8
+* migrate → Step 8+
+* setup production → Step 9
+
+---
+
+# 🔁 Step 7 flow
+
+1. load app config
+2. ask for industry
+3. ask for business modules
+4. resolve full app list
+5. map apps → repo URLs
+6. determine branches
+7. loop → `bench get-app`
+8. handle failures
+9. verify apps
+10. save config
+
+---
+
+# ✅ End-of-step summary
+
+```text
+Step 7 complete
+
+Industry: Healthcare
+Business modules: HR, CRM, Payments
+Apps fetched:
+- frappe
+- erpnext
+- triotek-hrms
+- triotek-crm
+- triotek-healthcare
+- triotek-frappe-mpesa-payments
+
+Failed apps: none
+```
+
+---
+
+# 🔥 Key success condition
+
+```text
+ALL required apps exist in:
+${BENCH_PATH}/apps/
+```
+
+---
+
+# 💡 Pro improvement
+
+Add a **dry-run mode**:
+
+```text
+Preview apps to be installed:
+- frappe
+- erpnext
+- triotek-hrms
+...
+Proceed? (y/n)
+```
+
+---
+
+# ✅ Final definition of Step 7
+
+Step 7 should cover:
+
+* loading grouped app config
+* interactive selection (industry + modules)
+* resolving final app list
+* mapping to repos + branches
+* fetching apps into bench
+* handling errors
+* verifying results
+
+---
+

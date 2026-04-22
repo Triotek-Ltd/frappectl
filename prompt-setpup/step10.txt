@@ -1,0 +1,277 @@
+
+# Step 10: Enable HTTPS 🔐
+
+👉 eliminate browser warnings
+👉 encrypt traffic (protect against MITM on web)
+👉 make the site production-grade
+
+---
+
+# 🎯 What Step 10 should achieve
+
+By the end of Step 10:
+
+* your site is accessible via **https://**
+* valid SSL certificates are installed
+* Nginx is configured for HTTPS
+* HTTP → HTTPS redirect is working
+* certificates auto-renew (Let’s Encrypt)
+* no browser “Not Secure” warning
+
+---
+
+# 🧠 Important distinction
+
+* Step 3 → protects **SSH/admin access**
+* Step 10 → protects **browser/client traffic**
+
+👉 This is where real MITM protection for users happens.
+
+---
+
+# 🔑 Requirement before Step 10
+
+You MUST have:
+
+* valid domain (e.g. `erp.example.com`)
+* DNS pointing to server IP
+* port 80 & 443 open (Step 3 firewall)
+
+If not, Let’s Encrypt will fail.
+
+---
+
+# 🧩 What Step 10 should cover
+
+## 1. Confirm domain readiness
+
+Ask:
+
+```text
+Is your domain pointing to this server? (y/n)
+```
+
+Optional validation:
+
+* ping domain
+* resolve IP
+
+---
+
+## 2. Use Bench to setup SSL
+
+Main command:
+
+```bash
+bench setup lets-encrypt ${DEFAULT_SITE_NAME}
+```
+
+Bench will:
+
+* request certificate from Let’s Encrypt
+* configure Nginx SSL block
+* install certificate
+* setup auto-renew
+
+---
+
+## 3. Handle email requirement
+
+Let’s Encrypt requires an email.
+
+Prompt:
+
+```text
+Enter email for SSL certificate:
+```
+
+---
+
+## 4. Configure HTTP → HTTPS redirect
+
+Ensure Nginx enforces HTTPS.
+
+Bench usually handles this, but your script should verify:
+
+* port 80 redirects to 443
+* no plain HTTP access remains
+
+---
+
+## 5. Reload Nginx
+
+After SSL setup:
+
+```bash
+systemctl reload nginx
+```
+
+---
+
+## 6. Verify SSL is working
+
+Check:
+
+```text
+https://your-domain
+```
+
+Your script can also:
+
+* check certificate exists
+* verify Nginx config includes SSL
+
+---
+
+## 7. Setup auto-renewal
+
+Bench/Certbot should handle this automatically.
+
+Your script should verify:
+
+* renewal cron or timer exists
+
+---
+
+# ⚠️ Handle failure cases
+
+If SSL fails:
+
+```text
+Failed to obtain certificate
+
+Possible reasons:
+- DNS not pointing correctly
+- ports blocked
+- domain not reachable
+
+1. Retry
+2. Skip for now
+3. Abort
+```
+
+---
+
+# 🔒 Optional security enhancements
+
+Your script can include (optional):
+
+### 1. Strong SSL config
+
+* disable weak ciphers
+* enforce TLS 1.2+
+
+### 2. HSTS (advanced)
+
+```text
+Strict-Transport-Security
+```
+
+⚠️ Only enable if you understand consequences
+
+---
+
+# 🧠 What Step 10 should ask
+
+### Required
+
+* domain name (from Step 8)
+* email for SSL
+* confirm DNS is ready
+
+---
+
+### Optional
+
+* force HTTPS redirect? (default yes)
+* enable HSTS? (advanced)
+* skip SSL (dev mode)
+
+---
+
+# 💾 What Step 10 should save
+
+```bash
+SSL_ENABLED=""
+SSL_CERT_INSTALLED=""
+SSL_EMAIL=""
+HTTPS_REDIRECT_ENABLED=""
+SSL_RENEWAL_ENABLED=""
+SSL_STATUS=""
+```
+
+---
+
+# 🚫 What Step 10 should NOT do
+
+Do NOT:
+
+* modify bench apps
+* change site config heavily
+* restart all services unnecessarily
+* touch database
+
+---
+
+# 🔁 Step 10 flow
+
+1. load config (Steps 1–9)
+2. confirm domain readiness
+3. prompt for SSL email
+4. run `bench setup lets-encrypt`
+5. configure HTTPS redirect
+6. reload nginx
+7. verify SSL works
+8. confirm auto-renew
+9. save state
+
+---
+
+# ✅ End-of-step summary
+
+```text
+Step 10 complete
+
+Site: https://erp.example.com
+SSL: installed
+HTTPS redirect: enabled
+Certificate provider: Let's Encrypt
+Auto-renew: enabled
+Browser secure: yes
+```
+
+---
+
+# 🔥 Critical success condition
+
+```text
+✔ Site loads via HTTPS without warnings
+✔ HTTP redirects to HTTPS
+✔ Certificate valid
+```
+
+---
+
+# 💡 Pro tip
+
+If your script detects `.local` or non-public domains:
+
+👉 skip SSL automatically and warn:
+
+```text
+SSL skipped: domain not publicly resolvable
+```
+
+---
+
+# ✅ Final definition of Step 10
+
+Step 10 should cover:
+
+* obtaining SSL certificate
+* configuring HTTPS in Nginx
+* enabling secure access
+* setting up auto-renewal
+* verifying browser security
+
+---

@@ -1,0 +1,357 @@
+
+# Step 4: User & Development Environment Setup
+
+## What Step 4 should achieve
+
+By the end of Step 4, your script should have:
+
+* switched focus to the real `BENCH_USER`
+* prepared that user’s shell environment
+* installed/configured Git identity for that user
+* optionally configured Git SSH access for private repos
+* prepared known hosts for Git providers
+* created a clean workspace under the real bench user
+* saved source-control preferences for later `get-app` operations
+
+This step is about the **personality and tooling of the bench user**, not system packages like MariaDB or Nginx yet.
+
+---
+
+## The key distinction in Step 4
+
+There are **two SSH contexts**, and Step 4 should only manage the Git one:
+
+### Already handled in Step 3
+
+* SSH key for logging into the server as `BENCH_USER`
+
+### Handled in Step 4
+
+* SSH identity the **server-side bench user** uses for GitHub/GitLab/private repo access
+
+These do not need to be the same key, and keeping them separate is cleaner and safer for rotation and access control. GitHub documents both account SSH keys and deploy keys for repo access, and deploy keys are often a better fit for servers.
+
+---
+
+# What Step 4 should cover
+
+## 1. Prepare the bench user shell environment
+
+Actions:
+
+* ensure the real home is correct: `/home/${BENCH_USER}`
+* ensure `.bashrc`, `.profile`, and shell startup files exist
+* optionally add useful aliases or environment variables
+* ensure ownership is correct for all files in the home dir
+
+Suggested paths:
+
+```bash
+BENCH_USER_HOME="/home/${BENCH_USER}"
+WORKSPACE_ROOT="${BENCH_USER_HOME}/workspace"
+REPOS_ROOT="${BENCH_USER_HOME}/repos"
+SSH_DIR="${BENCH_USER_HOME}/.ssh"
+```
+
+This keeps user tooling separate from the actual Bench path that will later become `/home/${BENCH_USER}/${BENCH_NAME}`.
+
+---
+
+## 2. Install and configure Git identity for the bench user
+
+This is the Git profile part you asked about.
+
+Your script should ask for:
+
+* **Git display name**
+* **Git email**
+* **Preferred Git provider**
+
+  * GitHub
+  * GitLab
+  * Other / custom
+
+Then set them for the bench user, for example:
+
+```bash
+git config --global user.name "Alice Deploy"
+git config --global user.email "deploy@example.com"
+```
+
+Git’s official docs describe this as the standard way to identify commits made by that user.
+
+### Save as variables
+
+```bash
+GIT_USER_NAME=""
+GIT_USER_EMAIL=""
+GIT_PROVIDER=""
+```
+
+---
+
+## 3. Ask whether private Git access is needed
+
+This is important because not every deployment needs it.
+
+Prompt:
+
+```text
+Will this bench user need access to private Git repositories?
+1. No, public repos only
+2. Yes, via SSH key
+3. Yes, via deploy key
+4. Yes, via HTTPS token later
+```
+
+### Why this matters
+
+* public apps can be fetched without private auth
+* private/custom apps need credentials
+* your script should not generate unnecessary SSH keys if they are not needed
+
+GitHub and GitLab both support SSH-based repo access and deploy keys for repo-level server access.
+
+---
+
+## 4. Configure Git SSH for the bench user
+
+If the user selects SSH-based Git access, Step 4 should:
+
+* create `${SSH_DIR}` if missing
+* generate a new SSH key pair for the bench user, preferably Ed25519
+* set strict permissions on `.ssh`
+* show the public key
+* save the public key to a known file for copy/paste into GitHub/GitLab
+
+GitHub recommends Ed25519 when generating a new SSH key unless a legacy constraint exists.
+
+Example generated paths:
+
+```bash
+/home/${BENCH_USER}/.ssh/id_ed25519
+/home/${BENCH_USER}/.ssh/id_ed25519.pub
+```
+
+### Important
+
+This key is for **repo access from the server**, not server login.
+
+---
+
+## 5. Support deploy-key mode
+
+This is often the cleaner option for production.
+
+If the user chooses deploy-key mode:
+
+* still generate the SSH key under the bench user
+* label it clearly, e.g. `id_ed25519_gitrepo`
+* print instructions that this public key should be added as a **deploy key** to the relevant repository
+
+GitHub’s deploy key docs describe them as repo-attached SSH keys that allow a server to access a repository without tying access to a personal account.
+
+This is usually better when:
+
+* the server pulls only one or a few private repos
+* you want minimal privilege
+* you do not want the server attached to a personal developer account
+
+---
+
+## 6. Add Git host keys to known_hosts
+
+This helps reduce interactive prompts and strengthens SSH trust behavior.
+
+Actions:
+
+* create `${SSH_DIR}/known_hosts`
+* add host keys for the chosen Git provider
+* optionally use `ssh-keyscan` for:
+
+  * github.com
+  * gitlab.com
+  * custom Git host
+
+This does **not** replace proper host verification policy, but it makes first use smoother and avoids blind acceptance prompts. OpenSSH client-side host key checking is a key part of MITM resistance.
+
+### Save
+
+```bash
+GIT_KNOWN_HOSTS_CONFIGURED=""
+```
+
+---
+
+## 7. Optionally create per-provider SSH config
+
+If the user will use multiple Git identities, Step 4 can prepare `~/.ssh/config`.
+
+Example use case:
+
+* one key for GitHub
+* one key for GitLab
+* one key for private company Git
+
+Then your script can generate entries like:
+
+```text
+Host github.com
+  HostName github.com
+  User git
+  IdentityFile ~/.ssh/id_ed25519
+  IdentitiesOnly yes
+```
+
+OpenSSH supports `IdentityFile` and host-specific config blocks in `ssh_config`.
+
+This should be optional, not forced.
+
+---
+
+## 8. Test Git connectivity
+
+If SSH-based Git was configured, your script should offer to test access.
+
+Examples:
+
+* `ssh -T git@github.com`
+* `ssh -T git@gitlab.com`
+
+GitHub documents testing SSH connectivity after key setup, which is a useful validation step before later `bench get-app` operations.
+
+This test should:
+
+* be optional
+* not break the script if the key has not yet been added to the provider
+
+---
+
+## 9. Prepare working directories for repo handling
+
+Suggested dirs under the real bench user:
+
+```bash
+mkdir -p "${WORKSPACE_ROOT}"
+mkdir -p "${REPOS_ROOT}"
+```
+
+Purpose:
+
+* workspace for temporary repo operations
+* safe place for custom/private app clones if needed
+* clean separation from actual bench directory
+
+---
+
+## 10. Persist source-control settings for later steps
+
+Add these to your installer config:
+
+```bash
+GIT_USER_NAME=""
+GIT_USER_EMAIL=""
+GIT_PROVIDER=""
+GIT_ACCESS_MODE=""
+GIT_SSH_ENABLED=""
+GIT_DEPLOY_KEY_MODE=""
+GIT_SSH_KEY_PATH=""
+GIT_PUBLIC_KEY_PATH=""
+GIT_KNOWN_HOSTS_CONFIGURED=""
+WORKSPACE_ROOT=""
+REPOS_ROOT=""
+```
+
+These will matter later in:
+
+* **Step 7: Get Apps**
+* **Bench Operations → App Management**
+
+---
+
+# What Step 4 should ask interactively
+
+## Required prompts
+
+* Git display name?
+* Git email?
+* Git provider?
+* Will private repos be used?
+
+## Conditional prompts
+
+If private repos = yes:
+
+* Use personal account SSH key or deploy key?
+* Generate new key now?
+* Which key filename?
+* Add provider host to known_hosts now?
+* Test SSH connectivity now?
+
+## Optional prompts
+
+* Create SSH config entries?
+* Separate key per provider?
+* Use HTTPS token instead of SSH later?
+
+---
+
+# What Step 4 should NOT do
+
+Step 4 should not yet:
+
+* install Bench CLI
+* run `bench init`
+* fetch apps
+* install MariaDB, Redis, Nginx, Node, Yarn
+* create a site
+
+Those come later.
+
+---
+
+# Recommended Step 4 flow
+
+1. load config from Steps 1–3
+2. prepare `BENCH_USER` shell/home environment
+3. ask for Git name and email
+4. configure Git global identity for `BENCH_USER`
+5. ask whether private repo access is needed
+6. if yes, configure Git SSH or deploy-key mode
+7. prepare known_hosts for chosen provider
+8. optionally generate SSH config entries
+9. optionally test Git SSH connectivity
+10. create workspace/repo helper dirs
+11. save all values for later steps
+
+---
+
+# Suggested end-of-step summary
+
+```text
+Step 4 complete
+
+Bench user: alice
+Git name: Alice Deploy
+Git email: deploy@example.com
+Git provider: GitHub
+Private repo access: yes
+Git SSH: enabled
+Deploy key mode: yes
+SSH key path: /home/alice/.ssh/id_ed25519_gitrepo
+Known hosts configured: yes
+Workspace root: /home/alice/workspace
+Repos root: /home/alice/repos
+```
+
+# Final definition of Step 4
+
+Step 4 should cover:
+
+* preparing the real bench user environment
+* configuring Git identity
+* configuring optional Git SSH/deploy-key access
+* preparing known_hosts and SSH config if needed
+* creating workspace helper directories
+* saving all Git/source-control info for later Bench app operations
+
