@@ -5,6 +5,7 @@ from .system import (
     can_apply_real_system_changes,
     require_linux_host,
     require_root_privileges,
+    user_exists,
 )
 from .bench import (
     collect_bench_identity,
@@ -36,6 +37,7 @@ __all__ = [
     "can_apply_real_system_changes",
     "require_linux_host",
     "require_root_privileges",
+    "user_exists",
     "collect_bench_identity",
     "derive_layout",
     "collect_dev_environment_settings",

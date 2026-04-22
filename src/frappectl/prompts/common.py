@@ -5,6 +5,14 @@ def ask_text(message: str, default: str | None = None) -> str:
     return typer.prompt(message, default=default)
 
 
+def ask_secret(message: str, confirmation_prompt: bool = True) -> str:
+    return typer.prompt(
+        message,
+        hide_input=True,
+        confirmation_prompt=confirmation_prompt,
+    )
+
+
 def ask_choice(message: str, choices: list[str], default: str | None = None) -> str:
     prompt_text = f"{message} ({', '.join(choices)})"
     while True:

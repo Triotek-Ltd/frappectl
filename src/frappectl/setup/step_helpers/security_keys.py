@@ -1,7 +1,8 @@
 from pathlib import PurePosixPath
 
 from frappectl.core import load_config, save_config
-from frappectl.validators import is_windows
+from frappectl.integrations import users
+from frappectl.setup.step_helpers import can_apply_real_system_changes
 
 
 def derive_admin_ssh_key_paths(bench_name: str) -> dict[str, str]:
@@ -28,9 +29,12 @@ def prepare_admin_ssh_key_metadata(bench_name: str) -> dict[str, str]:
     paths = derive_admin_ssh_key_paths(bench_name)
     existing = load_config(bench_name)
     merged = {**existing, **paths}
-
-    if is_windows():
-        merged["ADMIN_SSH_KEY_STATUS"] = "planned"
+    if can_apply_real_system_changes():
+        users.ensure_home_permissions(str(PurePosixPath(paths["ADMIN_SSH_PRIVATE_KEY_PATH"]).parent), config["BENCH_USER"])
+        private_key_path = PurePosixPath(paths["ADMIN_SSH_PRIVATE_KEY_PATH"])
+        if not private_key_path.exists():
+            users.generate_ssh_key(config["BENCH_USER"], str(private_key_path))
+        merged["ADMIN_SSH_KEY_STATUS"] = "yes"
     else:
         merged["ADMIN_SSH_KEY_STATUS"] = "planned"
 

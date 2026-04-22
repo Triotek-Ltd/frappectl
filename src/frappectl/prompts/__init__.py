@@ -1,4 +1,4 @@
-from .common import ask_text, ask_choice, ask_bool
+from .common import ask_text, ask_choice, ask_bool, ask_secret
 from .bench import ask_bench_name, ask_bench_user, ask_deploy_mode
 from .site import (
     ask_site_name,
@@ -11,6 +11,7 @@ from .confirmations import confirm_action, confirm_dangerous_action
 
 __all__ = [
     "ask_text",
+    "ask_secret",
     "ask_choice",
     "ask_bool",
     "ask_bench_name",

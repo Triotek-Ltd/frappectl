@@ -9,6 +9,8 @@ from . import mariadb
 from . import redis
 from . import nginx
 from . import supervisor
+from . import sshd
+from . import users
 
 __all__ = [
     # core shell
@@ -26,4 +28,6 @@ __all__ = [
     "redis",
     "nginx",
     "supervisor",
+    "sshd",
+    "users",
 ]
