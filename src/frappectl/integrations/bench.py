@@ -1,6 +1,7 @@
 import shlex
 from pathlib import Path
 
+from frappectl.core.constants import INSTALL_ROOT
 from frappectl.integrations.shell import run
 
 
@@ -9,7 +10,18 @@ def _user_shell(command: list[str]) -> list[str]:
 
 
 def install_cli(python_bin: str = "python3", user: str | None = None):
-    result = run([python_bin, "-m", "pip", "install", "frappe-bench"], sudo=True)
+    venv_path = INSTALL_ROOT / "bench-cli"
+    bench_binary = venv_path / "bin" / "bench"
+    venv_python = venv_path / "bin" / "python"
+
+    if not venv_python.exists():
+        run(["mkdir", "-p", str(venv_path)], sudo=True)
+        run([python_bin, "-m", "venv", str(venv_path)], sudo=True)
+
+    run([str(venv_python), "-m", "pip", "install", "--upgrade", "pip", "setuptools", "wheel"], sudo=True)
+    result = run([str(venv_python), "-m", "pip", "install", "--upgrade", "frappe-bench"], sudo=True)
+    run(["ln", "-sf", str(bench_binary), "/usr/local/bin/bench"], sudo=True)
+
     if user:
         run(_user_shell(["bench", "--version"]), user=user)
     return result

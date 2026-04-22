@@ -19,6 +19,7 @@ Installer state is stored under `/etc/frappe-installer`, `/opt/frappe-installer`
 - wires production with nginx and supervisor
 - enables HTTPS with Let's Encrypt when DNS is ready
 - provides direct CLI commands for day-2 maintenance
+- installs Bench CLI in an isolated venv under `/opt/frappe-installer/bench-cli`
 
 ## Server Requirements
 
