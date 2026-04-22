@@ -89,12 +89,29 @@ prompt_bench_name() {
   [[ -n "${BENCH_NAME}" ]] || fail "Bench name is required when RUN_SETUP=yes."
 }
 
+print_setup_summary() {
+  cat <<EOF
+
+Installer setup summary
+=======================
+Repo URL: ${REPO_URL}
+Ref: ${REF}
+Install mode: ${INSTALL_MODE}
+Bench name: ${BENCH_NAME}
+
+The remaining setup values such as bench user, deploy mode, site name,
+database password, DNS readiness, and SSL email will be collected during setup.
+
+EOF
+}
+
 run_full_setup() {
   if [[ "${RUN_SETUP}" != "yes" ]]; then
     return
   fi
 
   prompt_bench_name
+  print_setup_summary
   log "Starting full setup for bench '${BENCH_NAME}'..."
   frappectl setup run --bench "${BENCH_NAME}"
 }

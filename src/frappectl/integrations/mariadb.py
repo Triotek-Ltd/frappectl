@@ -8,3 +8,12 @@ def is_running():
 
 def start():
     return run(["systemctl", "start", "mariadb"], sudo=True)
+
+
+def database_exists(name: str, root_password: str | None = None) -> bool:
+    cmd = ["mysql", "-u", "root"]
+    if root_password:
+        cmd.append(f"-p{root_password}")
+    cmd.extend(["-Nse", f"SHOW DATABASES LIKE '{name}'"])
+    result = run(cmd, check=False)
+    return result.returncode == 0 and result.stdout.strip() == name

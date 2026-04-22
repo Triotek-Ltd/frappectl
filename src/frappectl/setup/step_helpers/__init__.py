@@ -17,6 +17,7 @@ from .security import collect_security_settings, save_security_settings
 from .security_keys import derive_admin_ssh_key_paths, prepare_admin_ssh_key_metadata
 from .services import (
     detect_path_conflicts,
+    assert_no_bench_conflicts,
     save_service_flags,
     dependency_service_targets,
     production_service_flags,
@@ -45,6 +46,7 @@ __all__ = [
     "derive_admin_ssh_key_paths",
     "prepare_admin_ssh_key_metadata",
     "detect_path_conflicts",
+    "assert_no_bench_conflicts",
     "save_service_flags",
     "dependency_service_targets",
     "production_service_flags",

@@ -20,3 +20,7 @@ class PrivilegeError(FrappeCtlError):
 
 class UnsupportedPlatformError(FrappeCtlError):
     pass
+
+
+class ConflictError(FrappeCtlError):
+    pass

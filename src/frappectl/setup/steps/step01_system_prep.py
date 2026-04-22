@@ -2,6 +2,8 @@ from frappectl.core import register_bench, load_config
 from ..step_helpers import (
     prepare_installer_directories,
     collect_bench_identity,
+    derive_layout,
+    assert_no_bench_conflicts,
     save_bench_identity,
 )
 
@@ -10,6 +12,8 @@ def run(bench_name: str) -> None:
     prepare_installer_directories()
 
     identity = collect_bench_identity(bench_name)
+    layout = derive_layout(identity)
+    assert_no_bench_conflicts(bench_name, identity, layout, include_installer_state=True)
     merged = save_bench_identity(bench_name, identity)
 
     register_bench(
