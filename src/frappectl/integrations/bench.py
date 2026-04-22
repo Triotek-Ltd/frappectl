@@ -42,7 +42,7 @@ def start(path: str, user: str | None = None):
 
 
 def version(user: str | None = None):
-    cmd = ["bench", "version"]
+    cmd = ["bench", "--version"]
     if user:
         return run(_user_shell(cmd), user=user)
     return run(cmd)
