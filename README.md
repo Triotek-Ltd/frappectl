@@ -15,6 +15,7 @@ Installer state is stored under `/etc/frappe-installer`, `/opt/frappe-installer`
 - initializes a bench as the configured bench user
 - fetches apps from the configured app catalog
 - creates and prepares the default site
+- enables DNS multitenant bench routing for future sites on that bench
 - wires production with nginx and supervisor
 - enables HTTPS with Let's Encrypt when DNS is ready
 - provides direct CLI commands for day-2 maintenance
@@ -43,10 +44,12 @@ That installer defaults to:
 It will:
 
 1. install Python packaging prerequisites
-2. install `frappectl` from GitHub
-3. verify the CLI is available
-4. ask for a bench name if `BENCH_NAME` was not provided
-5. run the full setup flow immediately
+2. create an isolated app virtualenv under `/opt/frappe-installer/venv`
+3. install `frappectl` from GitHub into that virtualenv
+4. link the `frappectl` command into `/usr/local/bin`
+5. verify the CLI is available
+6. ask for a bench name if `BENCH_NAME` was not provided
+7. run the full setup flow immediately
 
 If you want to provide the bench name up front:
 
@@ -83,6 +86,7 @@ The installer-driven setup flow follows the staged design in `rnd/prompt-setpup`
 - Step 7: resolves and fetches apps
 - Step 8: creates the default site, installs site apps, migrates, and clears cache
 - Step 9: runs production setup and reloads nginx and supervisor safely
+- Step 9: enables DNS multitenant routing and clears `currentsite.txt` so later sites route by hostname cleanly
 - Step 10: runs `bench setup lets-encrypt` when DNS is ready
 
 So the installer is now the thing that should create the bench and default site on first run.
@@ -107,6 +111,7 @@ sudo frappectl site info --bench mybench
 sudo frappectl site list --bench mybench
 sudo frappectl site migrate --bench mybench
 sudo frappectl site use erp.example.com --bench mybench
+sudo frappectl site multitenant-status --bench mybench
 ```
 
 ### Apps

@@ -37,7 +37,11 @@ def prepare_production(bench_name: str) -> dict[str, str]:
     if inactive:
         raise RuntimeError(f"Production prerequisites are not active: {', '.join(inactive)}")
 
+    bench.config_toggle("dns_multitenant", True, cwd=bench_path, user=bench_user)
+    bench.config_toggle("serve_default_site", True, cwd=bench_path, user=bench_user)
+    current_site_path = bench.clear_current_site(bench_path)
     bench.setup_production(bench_user=bench_user, cwd=bench_path)
+    bench.setup_nginx(cwd=bench_path, user=bench_user)
     nginx.test_config()
     supervisor.reread()
     supervisor.update()
@@ -60,6 +64,11 @@ def prepare_production(bench_name: str) -> dict[str, str]:
             "SERVICES_RELOADED": "yes",
             "PRODUCTION_PROCESSES_ACTIVE": "yes",
             "DEFAULT_SITE_PRODUCTION_READY": "yes",
+            "MULTITENANT_MODE": "dns",
+            "DNS_MULTITENANT_ENABLED": "yes",
+            "SERVE_DEFAULT_SITE_ENABLED": "yes",
+            "CURRENTSITE_CLEARED": "yes",
+            "CURRENTSITE_PATH": str(current_site_path),
         }
     )
 

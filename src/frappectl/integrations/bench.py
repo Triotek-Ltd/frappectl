@@ -1,4 +1,5 @@
 import shlex
+from pathlib import Path
 
 from frappectl.integrations.shell import run
 
@@ -120,6 +121,27 @@ def setup_production(bench_user: str, cwd: str, user: str | None = None):
     if user:
         return run(_user_shell(cmd), cwd=cwd, user=user)
     return run(cmd, cwd=cwd, sudo=True)
+
+
+def setup_nginx(cwd: str, user: str | None = None):
+    cmd = ["bench", "setup", "nginx"]
+    if user:
+        return run(_user_shell(cmd), cwd=cwd, user=user)
+    return run(cmd, cwd=cwd)
+
+
+def config_toggle(key: str, enabled: bool, cwd: str, user: str | None = None):
+    cmd = ["bench", "config", key, "on" if enabled else "off"]
+    if user:
+        return run(_user_shell(cmd), cwd=cwd, user=user)
+    return run(cmd, cwd=cwd)
+
+
+def clear_current_site(cwd: str):
+    current_site_path = Path(cwd) / "sites" / "currentsite.txt"
+    current_site_path.parent.mkdir(parents=True, exist_ok=True)
+    current_site_path.write_text("", encoding="utf-8")
+    return current_site_path
 
 
 def setup_letsencrypt(site: str, email: str, cwd: str, user: str | None = None):

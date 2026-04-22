@@ -67,3 +67,17 @@ def use_site_cmd(
     config = load_config(bench_name)
     bench_ops.use_site(site_name, cwd=config.get("BENCH_PATH", ""), user=config.get("BENCH_USER"))
     typer.echo(f"Default site context switched to: {site_name}")
+
+
+@app.command("multitenant-status")
+def multitenant_status_cmd(
+    bench: str | None = typer.Option(None, "--bench", help="Target bench"),
+):
+    bench_name = resolve_bench(bench)
+    config = load_config(bench_name)
+    typer.echo(f"Bench: {bench_name}")
+    typer.echo(f"  MULTITENANT_MODE={config.get('MULTITENANT_MODE', 'unknown')}")
+    typer.echo(f"  DNS_MULTITENANT_ENABLED={config.get('DNS_MULTITENANT_ENABLED', 'unknown')}")
+    typer.echo(f"  SERVE_DEFAULT_SITE_ENABLED={config.get('SERVE_DEFAULT_SITE_ENABLED', 'unknown')}")
+    typer.echo(f"  CURRENTSITE_CLEARED={config.get('CURRENTSITE_CLEARED', 'unknown')}")
+    typer.echo(f"  CURRENTSITE_PATH={config.get('CURRENTSITE_PATH', '')}")

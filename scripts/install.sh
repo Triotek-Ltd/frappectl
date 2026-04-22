@@ -5,6 +5,9 @@ REPO_URL="${REPO_URL:-https://github.com/Triotek-Ltd/frappectl.git}"
 REF="${REF:-main}"
 PYTHON_BIN="${PYTHON_BIN:-python3}"
 INSTALL_MODE="${INSTALL_MODE:-git}"   # git | local
+INSTALL_ROOT="${INSTALL_ROOT:-/opt/frappe-installer}"
+APP_VENV_PATH="${APP_VENV_PATH:-${INSTALL_ROOT}/venv}"
+APP_BIN_DIR="${APP_BIN_DIR:-/usr/local/bin}"
 BENCH_NAME="${BENCH_NAME:-}"
 RUN_SETUP="${RUN_SETUP:-yes}"
 BENCH_USER="${BENCH_USER:-}"
@@ -79,7 +82,7 @@ ensure_python_and_pip() {
   if ! command -v "$PYTHON_BIN" >/dev/null 2>&1; then
     log "Python not found. Installing Python and pip..."
     sudo "$pkg_manager" update
-    sudo "$pkg_manager" install -y python3 python3-pip python3-venv
+    sudo "$pkg_manager" install -y python3 python3-pip python3-venv git
   fi
 
   if ! "$PYTHON_BIN" -m pip --version >/dev/null 2>&1; then
@@ -87,25 +90,46 @@ ensure_python_and_pip() {
     sudo "$pkg_manager" update
     sudo "$pkg_manager" install -y python3-pip
   fi
+
+  if ! command -v git >/dev/null 2>&1; then
+    log "Git not found. Installing git..."
+    sudo "$pkg_manager" update
+    sudo "$pkg_manager" install -y git
+  fi
 }
 
-upgrade_pip() {
-  log "Upgrading pip, setuptools, and wheel..."
-  "$PYTHON_BIN" -m pip install --upgrade pip setuptools wheel
+ensure_app_venv() {
+  mkdir -p "${INSTALL_ROOT}"
+  if [[ ! -x "${APP_VENV_PATH}/bin/python" ]]; then
+    log "Creating isolated frappectl virtual environment at ${APP_VENV_PATH}..."
+    "$PYTHON_BIN" -m venv "${APP_VENV_PATH}"
+  fi
+}
+
+upgrade_venv_pip() {
+  log "Upgrading pip, setuptools, and wheel in the installer venv..."
+  "${APP_VENV_PATH}/bin/python" -m pip install --upgrade pip setuptools wheel
 }
 
 install_from_git() {
   log "Installing frappectl from Git (${REPO_URL}@${REF})..."
-  "$PYTHON_BIN" -m pip install "git+${REPO_URL}@${REF}"
+  "${APP_VENV_PATH}/bin/python" -m pip install "git+${REPO_URL}@${REF}"
 }
 
 install_from_local() {
   [[ -f "pyproject.toml" ]] || fail "pyproject.toml not found. Run from project root for local install."
   log "Installing frappectl from local project..."
-  "$PYTHON_BIN" -m pip install .
+  "${APP_VENV_PATH}/bin/python" -m pip install .
+}
+
+link_command() {
+  install -d "${APP_BIN_DIR}"
+  ln -sf "${APP_VENV_PATH}/bin/frappectl" "${APP_BIN_DIR}/frappectl"
 }
 
 verify_command() {
+  link_command
+
   if ! command -v frappectl >/dev/null 2>&1; then
     fail "frappectl command not found after install."
   fi
@@ -172,6 +196,8 @@ Installer setup summary
 Repo URL: ${REPO_URL}
 Ref: ${REF}
 Install mode: ${INSTALL_MODE}
+Install root: ${INSTALL_ROOT}
+App venv: ${APP_VENV_PATH}
 Bench name: ${BENCH_NAME}
 Bench user: ${BENCH_USER:-[prompt during setup]}
 Deploy mode: ${DEPLOY_MODE:-[prompt during setup]}
@@ -232,7 +258,8 @@ main() {
   require_root
   reject_secret_env
   ensure_python_and_pip
-  upgrade_pip
+  ensure_app_venv
+  upgrade_venv_pip
 
   case "$INSTALL_MODE" in
     git)
