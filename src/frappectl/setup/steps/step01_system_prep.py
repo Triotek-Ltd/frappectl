@@ -13,7 +13,9 @@ def run(bench_name: str) -> None:
 
     identity = collect_bench_identity(bench_name)
     layout = derive_layout(identity)
-    assert_no_bench_conflicts(bench_name, identity, layout, include_installer_state=True)
+    # Step 1 runs after the installer has already seeded bench config and after the
+    # setup engine has started tracking step state, so those files are not collisions.
+    assert_no_bench_conflicts(bench_name, identity, layout, include_installer_state=False)
     merged = save_bench_identity(bench_name, identity)
 
     register_bench(
