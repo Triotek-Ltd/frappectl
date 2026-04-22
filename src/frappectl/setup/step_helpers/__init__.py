@@ -12,6 +12,9 @@ from .bench import (
     derive_layout,
     collect_dev_environment_settings,
     collect_bench_init_settings,
+    default_frappe_branch_for_python,
+    python_version_for_branch,
+    validate_python_for_branch,
     save_bench_identity,
 )
 from .security import collect_security_settings, save_security_settings
@@ -42,6 +45,9 @@ __all__ = [
     "derive_layout",
     "collect_dev_environment_settings",
     "collect_bench_init_settings",
+    "default_frappe_branch_for_python",
+    "python_version_for_branch",
+    "validate_python_for_branch",
     "save_bench_identity",
     "collect_security_settings",
     "save_security_settings",

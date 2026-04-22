@@ -2,7 +2,7 @@ from pathlib import Path
 
 from frappectl.core import load_config, save_config, register_bench
 from frappectl.integrations import bench
-from frappectl.setup.step_helpers import require_root_privileges
+from frappectl.setup.step_helpers import require_root_privileges, validate_python_for_branch
 
 
 def _required(config: dict[str, str], key: str) -> str:
@@ -21,6 +21,7 @@ def prepare_bench_init(bench_name: str) -> dict[str, str]:
     bench_path = _required(config, "BENCH_PATH")
     frappe_branch = _required(config, "FRAPPE_BRANCH")
     python_bin = _required(config, "PYTHON_BIN")
+    validate_python_for_branch(python_bin, frappe_branch)
 
     register_bench(
         bench_name_value,

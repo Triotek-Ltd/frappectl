@@ -1,4 +1,6 @@
 from pathlib import PurePosixPath
+import shutil
+import subprocess
 
 from frappectl.core import load_config, save_config
 from frappectl.core.constants import INSTALL_ROOT, BACKUP_ROOT, BASE_DIR, LOG_DIR
@@ -25,6 +27,57 @@ def _validate_email(value: str) -> str:
     if not cleaned or "@" not in cleaned or cleaned.startswith("@") or cleaned.endswith("@"):
         raise ValueError("Git email must be a valid non-empty email address")
     return cleaned
+
+
+def _detect_python_version(python_bin: str) -> tuple[int, int] | None:
+    executable = shutil.which(python_bin) or python_bin
+    try:
+        result = subprocess.run(
+            [executable, "-c", "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')"],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+    except Exception:
+        return None
+
+    value = result.stdout.strip()
+    try:
+        major_text, minor_text = value.split(".", 1)
+        return int(major_text), int(minor_text)
+    except Exception:
+        return None
+
+
+def python_version_for_branch(frappe_branch: str) -> tuple[int, int]:
+    if frappe_branch.startswith("version-16"):
+        return (3, 14)
+    return (3, 10)
+
+
+def validate_python_for_branch(python_bin: str, frappe_branch: str) -> None:
+    required_major, required_minor = python_version_for_branch(frappe_branch)
+    detected = _detect_python_version(python_bin)
+
+    if detected is None:
+        raise ValueError(
+            f"Could not detect Python version for '{python_bin}'. "
+            f"Choose an executable compatible with {frappe_branch}."
+        )
+
+    if detected < (required_major, required_minor):
+        raise ValueError(
+            f"{frappe_branch} requires Python {required_major}.{required_minor}+ but '{python_bin}' is "
+            f"Python {detected[0]}.{detected[1]}. "
+            "Use a newer Python executable or choose an older Frappe branch."
+        )
+
+
+def default_frappe_branch_for_python(python_bin: str) -> str:
+    detected = _detect_python_version(python_bin)
+    if detected and detected >= (3, 14):
+        return "version-16"
+    return "version-15"
 
 
 def collect_bench_identity(bench_name: str) -> dict[str, str]:
@@ -114,18 +167,25 @@ def collect_dev_environment_settings(bench_name: str) -> dict[str, str]:
 def collect_bench_init_settings(bench_name: str) -> dict[str, str]:
     existing = load_config(bench_name)
 
+    python_default = existing.get("PYTHON_BIN", "python3")
+    branch_default = existing.get("FRAPPE_BRANCH", default_frappe_branch_for_python(python_default))
+
     frappe_branch = existing.get("FRAPPE_BRANCH") or ask_text(
         "Frappe branch",
-        default=existing.get("FRAPPE_BRANCH", "version-16"),
+        default=branch_default,
     )
     python_bin = existing.get("PYTHON_BIN") or ask_text(
         "Python executable",
-        default=existing.get("PYTHON_BIN", "python3"),
+        default=python_default,
     )
 
+    frappe_branch = _require_non_empty(frappe_branch, "Frappe branch")
+    python_bin = _require_non_empty(python_bin, "Python executable")
+    validate_python_for_branch(python_bin, frappe_branch)
+
     return {
-        "FRAPPE_BRANCH": _require_non_empty(frappe_branch, "Frappe branch"),
-        "PYTHON_BIN": _require_non_empty(python_bin, "Python executable"),
+        "FRAPPE_BRANCH": frappe_branch,
+        "PYTHON_BIN": python_bin,
     }
 
 
