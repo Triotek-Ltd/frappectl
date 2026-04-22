@@ -142,7 +142,7 @@ Recommended interactive answers:
 - `Disable root SSH`: `yes`
 - `Disable password SSH`: `yes` only if you already have working SSH key access
 - `Enable Fail2ban?`: `yes`
-- `Default site name`: your real hostname, for example `erp.example.com`
+- `Default site name`: your real hostname
 - `Administrator password`: choose manually when prompted
 - `MariaDB root password`: choose manually when prompted
 - `Set as default site?`: `yes`
@@ -176,51 +176,51 @@ After the server is set up, use `frappectl` for maintenance.
 ### Bench
 
 ```bash
-sudo frappectl bench info --bench mybench
-sudo frappectl bench version --bench mybench
-sudo frappectl bench doctor --bench mybench
-sudo frappectl bench restart --bench mybench
+sudo frappectl bench info --bench <bench-name>
+sudo frappectl bench version --bench <bench-name>
+sudo frappectl bench doctor --bench <bench-name>
+sudo frappectl bench restart --bench <bench-name>
 ```
 
 ### Sites
 
 ```bash
-sudo frappectl site info --bench mybench
-sudo frappectl site list --bench mybench
-sudo frappectl site migrate --bench mybench
-sudo frappectl site use erp.example.com --bench mybench
-sudo frappectl site multitenant-status --bench mybench
+sudo frappectl site info --bench <bench-name>
+sudo frappectl site list --bench <bench-name>
+sudo frappectl site migrate --bench <bench-name>
+sudo frappectl site use <site-name> --bench <bench-name>
+sudo frappectl site multitenant-status --bench <bench-name>
 ```
 
 ### Apps
 
 ```bash
-sudo frappectl apps plan --bench mybench
-sudo frappectl apps prepare-fetch --bench mybench
-sudo frappectl apps list-site --bench mybench --site erp.example.com
+sudo frappectl apps plan --bench <bench-name>
+sudo frappectl apps prepare-fetch --bench <bench-name>
+sudo frappectl apps list-site --bench <bench-name> --site <site-name>
 ```
 
 ### Production And HTTPS
 
 ```bash
-sudo frappectl production status --bench mybench
+sudo frappectl production status --bench <bench-name>
 sudo frappectl production safe-restart
-sudo frappectl ssl status --bench mybench
+sudo frappectl ssl status --bench <bench-name>
 ```
 
 ### Jobs And Health
 
 ```bash
-sudo frappectl jobs status --bench mybench
-sudo frappectl jobs health --bench mybench
-sudo frappectl jobs restart --bench mybench
-sudo frappectl diagnostics health --bench mybench
+sudo frappectl jobs status --bench <bench-name>
+sudo frappectl jobs health --bench <bench-name>
+sudo frappectl jobs restart --bench <bench-name>
+sudo frappectl diagnostics health --bench <bench-name>
 ```
 
 ### Operations Menu Reference
 
 ```bash
-sudo frappectl menu open --bench mybench
+sudo frappectl menu open --bench <bench-name>
 ```
 
 This prints the mapped operations surface and the direct commands behind each section.
